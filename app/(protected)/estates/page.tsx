@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import { createClient } from "@/data/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 import { createEstate } from "./actions";
 
 type EstatesPageProps = {
@@ -25,7 +27,7 @@ export default async function EstatesPage({ searchParams }: EstatesPageProps) {
     );
   }
 
-  const { data: memberships } = await supabase
+  const { data: memberships, error: membershipsError } = await supabase
     .from("estate_members")
     .select("role,status,estate:estates(id,name,description,created_at)")
     .or(`user_id.eq.${user.id},email.eq.${user.email}`)
@@ -42,6 +44,12 @@ export default async function EstatesPage({ searchParams }: EstatesPageProps) {
           Create a new estate or continue working on an existing one.
         </p>
       </header>
+
+      {membershipsError ? (
+        <div className="rounded-2xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+          {membershipsError.message}
+        </div>
+      ) : null}
 
       {resolvedSearchParams?.error ? (
         <div className="rounded-2xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
