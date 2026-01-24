@@ -3,10 +3,10 @@ import { cookies } from "next/headers";
 
 import type { Database } from "./types";
 
-export const createClient = () => {
+export const createClient = async () => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   return createServerClient<Database>(url, anonKey, {
     cookies: {

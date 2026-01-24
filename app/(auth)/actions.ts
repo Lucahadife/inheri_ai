@@ -7,7 +7,8 @@ import { createClient } from "@/data/supabase/server";
 export async function login(formData: FormData) {
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
-  const supabase = createClient();
+  const nextPath = String(formData.get("next") ?? "");
+  const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -18,13 +19,14 @@ export async function login(formData: FormData) {
     redirect(`/login?error=${encodeURIComponent(error.message)}`);
   }
 
-  redirect("/dashboard");
+  redirect(nextPath || "/estates");
 }
 
 export async function signup(formData: FormData) {
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
-  const supabase = createClient();
+  const nextPath = String(formData.get("next") ?? "");
+  const supabase = await createClient();
 
   const { error } = await supabase.auth.signUp({
     email,
@@ -35,5 +37,7 @@ export async function signup(formData: FormData) {
     redirect(`/signup?error=${encodeURIComponent(error.message)}`);
   }
 
-  redirect("/login?notice=Check%20your%20email%20to%20confirm%20your%20account.");
+  const notice = "Check%20your%20email%20to%20confirm%20your%20account.";
+  const nextParam = nextPath ? `&next=${encodeURIComponent(nextPath)}` : "";
+  redirect(`/login?notice=${notice}${nextParam}`);
 }

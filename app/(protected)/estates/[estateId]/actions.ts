@@ -13,7 +13,7 @@ export async function addMember(formData: FormData) {
     redirect(`/estates/${estateId}?error=Email%20is%20required.`);
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { error } = await supabase.from("estate_members").insert({
     estate_id: estateId,

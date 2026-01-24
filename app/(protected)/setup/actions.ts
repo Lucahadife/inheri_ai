@@ -2,15 +2,15 @@
 
 import { redirect } from "next/navigation";
 
-import { supabaseAdmin } from "@/data/supabase/admin";
 import { createClient } from "@/data/supabase/server";
+import { supabaseAdmin } from "@/data/supabase/admin";
 
-export async function createEstate(formData: FormData) {
+export async function createEstateFromSetup(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
 
   if (!name) {
-    redirect("/estates?error=Estate%20name%20is%20required.");
+    redirect("/setup?error=Estate%20name%20is%20required.");
   }
 
   const supabase = await createClient();
@@ -19,7 +19,7 @@ export async function createEstate(formData: FormData) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect("/login?next=/setup");
   }
 
   const { data: estate, error } = await supabaseAdmin
@@ -33,7 +33,7 @@ export async function createEstate(formData: FormData) {
     .single();
 
   if (error || !estate) {
-    redirect(`/estates?error=${encodeURIComponent(error?.message ?? "Failed")}`);
+    redirect(`/setup?error=${encodeURIComponent(error?.message ?? "Failed")}`);
   }
 
   const { error: memberError } = await supabaseAdmin
@@ -47,8 +47,8 @@ export async function createEstate(formData: FormData) {
     });
 
   if (memberError) {
-    redirect(`/estates?error=${encodeURIComponent(memberError.message)}`);
+    redirect(`/setup?error=${encodeURIComponent(memberError.message)}`);
   }
 
-  redirect(`/estates/${estate.id}`);
+  redirect(`/estates/${estate.id}/setup`);
 }

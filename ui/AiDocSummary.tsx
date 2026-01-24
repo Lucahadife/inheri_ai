@@ -35,21 +35,23 @@ export default function AiDocSummary() {
   };
 
   return (
-    <div className="rounded-3xl border border-zinc-200 bg-white p-6">
-      <h3 className="text-lg font-semibold">AI document summary</h3>
-      <p className="mt-2 text-sm text-zinc-500">
+    <div className="rounded-3xl border border-white/10 bg-black/30 p-6">
+      <h3 className="text-lg font-semibold text-white">
+        AI document summary
+      </h3>
+      <p className="mt-2 text-sm text-white/60">
         Paste extracted text to generate a summary and risk notes.
       </p>
       <form className="mt-4 grid gap-3" onSubmit={handleSubmit}>
         <textarea
-          className="rounded-2xl border border-zinc-200 px-4 py-2 text-sm"
+          className="rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white"
           name="doc_text"
           placeholder="Paste document text"
           rows={5}
           required
         />
         <button
-          className="w-fit rounded-2xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white"
+          className="w-fit rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-zinc-900"
           type="submit"
           disabled={loading}
         >
@@ -57,7 +59,7 @@ export default function AiDocSummary() {
         </button>
       </form>
       {result ? (
-        <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700">
+        <div className="mt-4 rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/70">
           {"error" in result ? (
             result.error
           ) : (

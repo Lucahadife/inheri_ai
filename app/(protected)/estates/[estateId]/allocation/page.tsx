@@ -8,6 +8,7 @@ import {
   type Heir,
   type Preference,
 } from "@/logic/allocation";
+import AiFairness from "@/ui/AiFairness";
 import AiResolve from "@/ui/AiResolve";
 
 type AllocationPageProps = {
@@ -15,7 +16,7 @@ type AllocationPageProps = {
 };
 
 export default async function AllocationPage({ params }: AllocationPageProps) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: assets } = await supabase
     .from("assets")
@@ -43,6 +44,11 @@ export default async function AllocationPage({ params }: AllocationPageProps) {
         .select("asset_id,heir_id,boost")
         .in("asset_id", assetIds)
     : { data: [] };
+
+  const { data: rules } = await supabase
+    .from("estate_rules")
+    .select("title,description")
+    .eq("estate_id", params.estateId);
 
   const heirs: Heir[] = (members ?? [])
     .filter((member) => member.user_id)
@@ -94,20 +100,28 @@ export default async function AllocationPage({ params }: AllocationPageProps) {
 
   const planATrades = suggestTrades(planA, heirs, assetRecords, preferenceList);
 
+  const allocationSummary = JSON.stringify({
+    planA,
+    planB,
+  });
+
+  const preferenceSummary = JSON.stringify(preferenceList);
+  const rulesSummary = JSON.stringify(rules ?? []);
+
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-12">
+    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-16 text-white">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+          <p className="text-xs uppercase tracking-[0.3em] text-white/40">
             Allocation
           </p>
           <h1 className="mt-2 text-3xl font-semibold">Allocation proposals</h1>
-          <p className="mt-2 text-sm text-zinc-500">
+          <p className="mt-2 text-sm text-white/60">
             Rule-based plans that balance market value and emotional scores.
           </p>
         </div>
         <Link
-          className="rounded-2xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-800"
+          className="rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold"
           href={`/estates/${params.estateId}`}
         >
           Back to estate
@@ -117,7 +131,7 @@ export default async function AllocationPage({ params }: AllocationPageProps) {
       <section className="grid gap-6">
         {[planA, planB].map((plan) => (
           <div
-            className="rounded-3xl border border-zinc-200 bg-white p-6"
+            className="rounded-3xl border border-white/10 bg-white/5 p-6"
             key={plan.name}
           >
             <h2 className="text-xl font-semibold">{plan.name}</h2>
@@ -129,28 +143,28 @@ export default async function AllocationPage({ params }: AllocationPageProps) {
                 );
                 return (
                   <div
-                    className="rounded-2xl border border-zinc-200 px-4 py-3"
+                    className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3"
                     key={heir.id}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-4">
                       <div>
-                        <p className="text-sm font-semibold text-zinc-900">
+                        <p className="text-sm font-semibold text-white">
                           {heir.name}
                         </p>
-                        <p className="text-xs text-zinc-500">
+                        <p className="text-xs text-white/60">
                           Value ${totals.valueTotal.toFixed(0)} · Emotional{" "}
                           {totals.emotionalTotal} · Delta{" "}
                           {totals.deltaFromTarget.toFixed(0)}
                         </p>
                       </div>
-                      <div className="text-xs text-zinc-500">
+                      <div className="text-xs text-white/60">
                         {assetsForHeir.length} assets
                       </div>
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {assetsForHeir.map((asset) => (
                         <span
-                          className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-500"
+                          className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/60"
                           key={asset.id}
                         >
                           {asset.name}
@@ -165,13 +179,13 @@ export default async function AllocationPage({ params }: AllocationPageProps) {
         ))}
       </section>
 
-      <section className="grid gap-4 rounded-3xl border border-zinc-200 bg-white p-6">
+      <section className="grid gap-4 rounded-3xl border border-white/10 bg-white/5 p-6">
         <h2 className="text-lg font-semibold">Trade suggestions (Plan A)</h2>
         <div className="grid gap-3">
           {planATrades.length ? (
             planATrades.map((trade) => (
               <div
-                className="rounded-2xl border border-zinc-200 px-4 py-3 text-sm text-zinc-700"
+                className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white/70"
                 key={`${trade.assetId}-${trade.toHeirId}`}
               >
                 Move {trade.assetName} to{" "}
@@ -184,16 +198,31 @@ export default async function AllocationPage({ params }: AllocationPageProps) {
               </div>
             ))
           ) : (
-            <div className="rounded-2xl border border-dashed border-zinc-200 px-4 py-6 text-sm text-zinc-500">
+            <div className="rounded-2xl border border-dashed border-white/10 px-4 py-6 text-sm text-white/50">
               No trade suggestions at this time.
             </div>
           )}
         </div>
       </section>
 
-      <section className="grid gap-4">
-        <h2 className="text-lg font-semibold">AI dispute helper</h2>
-        <AiResolve />
+      <section className="grid gap-4 lg:grid-cols-2">
+        <AiFairness
+          allocationSummary={allocationSummary}
+          preferenceSummary={preferenceSummary}
+          rulesSummary={rulesSummary}
+        />
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+          <h2 className="text-lg font-semibold text-white">
+            AI fairness narrative
+          </h2>
+          <p className="mt-2 text-sm text-white/60">
+            Use the dispute helper to explore alternative swaps and settle
+            conflicting preferences.
+          </p>
+          <div className="mt-4">
+            <AiResolve />
+          </div>
+        </div>
       </section>
     </div>
   );

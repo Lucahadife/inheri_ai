@@ -5,7 +5,7 @@ import { createClient } from "@/data/supabase/server";
 export default async function ProtectedLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -14,5 +14,5 @@ export default async function ProtectedLayout({
     redirect("/login");
   }
 
-  return <div className="min-h-screen bg-zinc-50">{children}</div>;
+  return <div className="min-h-screen bg-zinc-950">{children}</div>;
 }

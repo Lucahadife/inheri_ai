@@ -73,7 +73,7 @@ create table if not exists public.scenarios (
   id uuid primary key default gen_random_uuid(),
   estate_id uuid not null references public.estates(id) on delete cascade,
   heir_id uuid not null references auth.users(id),
-  name text not null check (name in ('A', 'B')),
+  name text not null check (name in ('A', 'B', 'C')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (estate_id, heir_id, name)
@@ -299,6 +299,79 @@ for all
 to authenticated
 using (public.is_scenario_owner(scenario_id))
 with check (public.is_scenario_owner(scenario_id));
+
+alter table public.scenarios drop constraint if exists scenarios_name_check;
+alter table public.scenarios
+  add constraint scenarios_name_check check (name in ('A', 'B', 'C'));
+
+alter table public.assets
+  add column if not exists asset_type text,
+  add column if not exists asset_category text,
+  add column if not exists size_label text,
+  add column if not exists ai_value_low numeric,
+  add column if not exists ai_value_high numeric,
+  add column if not exists ai_confidence numeric,
+  add column if not exists ai_factors text[],
+  add column if not exists ai_disclaimer text;
+
+alter table public.asset_documents
+  add column if not exists title text,
+  add column if not exists doc_type text,
+  add column if not exists summary text,
+  add column if not exists ai_summary text,
+  add column if not exists doc_text text;
+
+create table if not exists public.estate_rules (
+  id uuid primary key default gen_random_uuid(),
+  estate_id uuid not null references public.estates(id) on delete cascade,
+  rule_type text not null,
+  title text not null,
+  description text,
+  config jsonb,
+  created_by uuid not null references auth.users(id),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.estate_rule_acceptances (
+  id uuid primary key default gen_random_uuid(),
+  estate_rule_id uuid not null references public.estate_rules(id) on delete cascade,
+  user_id uuid not null references auth.users(id),
+  accepted_at timestamptz not null default now(),
+  unique (estate_rule_id, user_id)
+);
+
+alter table public.estate_rules enable row level security;
+alter table public.estate_rule_acceptances enable row level security;
+
+create policy "estate rules readable by members"
+on public.estate_rules
+for select
+to authenticated
+using (public.is_estate_member(estate_id));
+
+create policy "estate rules writable by admins"
+on public.estate_rules
+for all
+to authenticated
+using (public.is_estate_admin(estate_id))
+with check (public.is_estate_admin(estate_id));
+
+create policy "estate rule acceptances readable by members"
+on public.estate_rule_acceptances
+for select
+to authenticated
+using (
+  public.is_estate_member(
+    (select estate_id from public.estate_rules er where er.id = estate_rule_id)
+  )
+);
+
+create policy "estate rule acceptances writable by owner"
+on public.estate_rule_acceptances
+for all
+to authenticated
+using (user_id = auth.uid())
+with check (user_id = auth.uid());
 
 -- NOTE: Storage policies must be created by the storage owner role.
 -- The SQL editor may not allow `set role supabase_storage_admin`.

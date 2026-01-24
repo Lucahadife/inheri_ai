@@ -10,7 +10,7 @@ export async function upsertPreference(formData: FormData) {
   const score = Number(formData.get("score") ?? 0);
   const note = String(formData.get("note") ?? "").trim();
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -47,7 +47,7 @@ export async function upsertBoost(formData: FormData) {
   const boost = Number(formData.get("boost") ?? 0);
   const note = String(formData.get("note") ?? "").trim();
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { error } = await supabase.from("decedent_boosts").upsert(
     {
