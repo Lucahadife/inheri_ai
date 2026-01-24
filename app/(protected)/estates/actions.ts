@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { supabaseAdmin } from "@/data/supabase/admin";
@@ -50,5 +51,6 @@ export async function createEstate(formData: FormData) {
     redirect(`/estates?error=${encodeURIComponent(memberError.message)}`);
   }
 
+  revalidatePath("/estates");
   redirect(`/estates/${estate.id}`);
 }
