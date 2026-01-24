@@ -15,11 +15,20 @@ export default async function EstatesPage({ searchParams }: EstatesPageProps) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user?.email) {
+    return (
+      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-16 text-white">
+        <div className="rounded-2xl border border-rose-400/40 bg-rose-500/10 px-4 py-6 text-sm text-rose-100">
+          Unable to load your user session. Please log in again.
+        </div>
+      </div>
+    );
+  }
+
   const { data: memberships } = await supabase
     .from("estate_members")
     .select("role,status,estate:estates(id,name,description,created_at)")
-    .eq("user_id", user?.id ?? "")
-    .eq("status", "active")
+    .or(`user_id.eq.${user.id},email.eq.${user.email}`)
     .order("created_at", { foreignTable: "estates", ascending: false });
 
   return (
@@ -90,6 +99,9 @@ export default async function EstatesPage({ searchParams }: EstatesPageProps) {
                     </div>
                     <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold uppercase text-white/60">
                       {membership.role}
+                    </span>
+                    <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold uppercase text-white/60">
+                      {membership.status}
                     </span>
                   </div>
                 </Link>
