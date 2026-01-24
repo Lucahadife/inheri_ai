@@ -78,7 +78,7 @@ export default function AssetForm({ estateId, action }: AssetFormProps) {
   };
 
   return (
-    <form className="grid gap-5" action={action} encType="multipart/form-data">
+    <form className="grid gap-5" action={action}>
       <input type="hidden" name="estate_id" value={estateId} />
       <input type="hidden" name="ai_value_low" value={estimate?.low ?? ""} />
       <input type="hidden" name="ai_value_high" value={estimate?.high ?? ""} />
