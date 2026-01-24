@@ -13,6 +13,7 @@ type ValueEstimate = {
   factors: string[];
   confidence: number;
   disclaimer: string;
+  explanation: string;
 };
 
 type DocSummary = {
@@ -27,6 +28,8 @@ export default function AssetForm({ estateId, action }: AssetFormProps) {
   const [docSummary, setDocSummary] = useState<DocSummary | null>(null);
   const [loadingEstimate, setLoadingEstimate] = useState(false);
   const [loadingSummary, setLoadingSummary] = useState(false);
+  const [hasDoc, setHasDoc] = useState(false);
+  const [approved, setApproved] = useState(false);
 
   const handleEstimate = async () => {
     setLoadingEstimate(true);
@@ -42,6 +45,11 @@ export default function AssetForm({ estateId, action }: AssetFormProps) {
         ?.value,
       doc_text: (document.getElementById("asset-doc-text") as HTMLTextAreaElement)
         ?.value,
+      doc_title: (document.getElementById("asset-doc-title") as HTMLInputElement)
+        ?.value,
+      doc_type: (document.getElementById("asset-doc-type") as HTMLInputElement)
+        ?.value,
+      doc_summary: docSummary?.summary ?? "",
     };
     const response = await fetch("/api/ai/value-estimate", {
       method: "POST",
@@ -89,6 +97,12 @@ export default function AssetForm({ estateId, action }: AssetFormProps) {
         name="ai_disclaimer"
         value={estimate?.disclaimer ?? ""}
       />
+      <input
+        type="hidden"
+        name="ai_explanation"
+        value={estimate?.explanation ?? ""}
+      />
+      <input type="hidden" name="ai_approved" value={approved ? "1" : "0"} />
       <input type="hidden" name="ai_summary" value={docSummary?.summary ?? ""} />
       <input
         type="hidden"
@@ -183,25 +197,6 @@ export default function AssetForm({ estateId, action }: AssetFormProps) {
         </label>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          className="rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white"
-          onClick={(event) => {
-            event.preventDefault();
-            handleEstimate();
-          }}
-          type="button"
-        >
-          {loadingEstimate ? "Estimating..." : "Get AI estimate"}
-        </button>
-        {estimate ? (
-          <div className="text-xs text-white/60">
-            AI range ${estimate.low.toFixed(0)} - ${estimate.high.toFixed(0)} ·
-            {(estimate.confidence * 100).toFixed(0)}% confidence
-          </div>
-        ) : null}
-      </div>
-
       <div className="grid gap-4 rounded-3xl border border-white/10 bg-black/30 p-5">
         <h3 className="text-sm font-semibold text-white">
           Document intelligence
@@ -210,6 +205,7 @@ export default function AssetForm({ estateId, action }: AssetFormProps) {
           <label className="text-sm text-white/70">
             Doc title
             <input
+              id="asset-doc-title"
               className="mt-2 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white"
               name="doc_title"
             />
@@ -217,6 +213,7 @@ export default function AssetForm({ estateId, action }: AssetFormProps) {
           <label className="text-sm text-white/70">
             Doc type
             <input
+              id="asset-doc-type"
               className="mt-2 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white"
               name="doc_type"
               placeholder="Appraisal, deed, receipt"
@@ -230,6 +227,7 @@ export default function AssetForm({ estateId, action }: AssetFormProps) {
             name="document"
             type="file"
             accept="image/*,.pdf"
+            onChange={(event) => setHasDoc(Boolean(event.target.files?.length))}
           />
         </label>
         <label className="text-sm text-white/70">
@@ -258,6 +256,54 @@ export default function AssetForm({ estateId, action }: AssetFormProps) {
             </div>
           ) : null}
         </div>
+      </div>
+
+      <div className="grid gap-3 rounded-3xl border border-white/10 bg-black/30 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-white">
+              AI valuation estimate
+            </h3>
+            <p className="text-xs text-white/60">
+              Upload the document first, then generate an AI estimate using all
+              inputs.
+            </p>
+          </div>
+          <button
+            className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-zinc-900 disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={(event) => {
+              event.preventDefault();
+              handleEstimate();
+            }}
+            type="button"
+            disabled={!hasDoc || loadingEstimate}
+          >
+            {loadingEstimate ? "Estimating..." : "Get AI estimate"}
+          </button>
+        </div>
+        {estimate ? (
+          <div className="grid gap-2 text-xs text-white/70">
+            <div>
+              Range: ${estimate.low.toFixed(0)} - ${estimate.high.toFixed(0)} ·
+              Confidence {(estimate.confidence * 100).toFixed(0)}%
+            </div>
+            <div>Factors: {estimate.factors.join(", ")}</div>
+            <div>{estimate.explanation}</div>
+            <div className="text-white/50">{estimate.disclaimer}</div>
+            <label className="mt-2 flex items-center gap-2 text-xs text-white/70">
+              <input
+                type="checkbox"
+                checked={approved}
+                onChange={(event) => setApproved(event.target.checked)}
+              />
+              Approve this AI estimate
+            </label>
+          </div>
+        ) : (
+          <p className="text-xs text-white/50">
+            Add your asset details and document text, then run the estimate.
+          </p>
+        )}
       </div>
 
       <button

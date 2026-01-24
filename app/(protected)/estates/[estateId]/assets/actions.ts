@@ -31,6 +31,8 @@ export async function createAsset(formData: FormData) {
     .split("|")
     .filter(Boolean);
   const aiDisclaimer = String(formData.get("ai_disclaimer") ?? "").trim();
+  const aiExplanation = String(formData.get("ai_explanation") ?? "").trim();
+  const aiApproved = String(formData.get("ai_approved") ?? "") === "1";
   const docTitle = String(formData.get("doc_title") ?? "").trim();
   const docType = String(formData.get("doc_type") ?? "").trim();
   const docText = String(formData.get("doc_text") ?? "").trim();
@@ -69,6 +71,8 @@ export async function createAsset(formData: FormData) {
       ai_confidence: aiConfidence,
       ai_factors: aiFactors.length ? aiFactors : null,
       ai_disclaimer: aiDisclaimer || null,
+      ai_explanation: aiExplanation || null,
+      ai_approved: aiApproved,
       created_by: user.id,
     })
     .select()

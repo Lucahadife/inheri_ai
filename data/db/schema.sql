@@ -312,7 +312,9 @@ alter table public.assets
   add column if not exists ai_value_high numeric,
   add column if not exists ai_confidence numeric,
   add column if not exists ai_factors text[],
-  add column if not exists ai_disclaimer text;
+  add column if not exists ai_disclaimer text,
+  add column if not exists ai_explanation text,
+  add column if not exists ai_approved boolean default false;
 
 alter table public.asset_documents
   add column if not exists title text,

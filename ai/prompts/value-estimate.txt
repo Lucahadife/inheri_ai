@@ -6,7 +6,8 @@ Return ONLY valid JSON matching this shape:
   "high": number,
   "factors": string[],
   "confidence": number,
-  "disclaimer": string
+  "disclaimer": string,
+  "explanation": string
 }
 
 Guidelines:
@@ -14,3 +15,4 @@ Guidelines:
 - "confidence" is 0 to 1.
 - "factors" should be concrete and explainable.
 - Always include a disclaimer that this is not an appraisal.
+- "explanation" should reference the inputs and any document context.

@@ -37,6 +37,8 @@ type AssetRecord = {
   ai_value_high: number | null;
   ai_confidence: number | null;
   ai_factors: string[] | null;
+  ai_explanation?: string | null;
+  ai_approved?: boolean | null;
   asset_documents: AssetDocument[] | null;
 };
 
@@ -50,7 +52,7 @@ export default async function AssetsPage({
   const { data: assets } = await supabase
     .from("assets")
     .select(
-      "id,name,asset_type,asset_category,size_label,description,location,notes,value_low,value_high,ai_value_low,ai_value_high,ai_confidence,ai_factors,asset_documents(id,storage_path,file_name,file_type,file_size,title,doc_type,summary,ai_summary)"
+      "id,name,asset_type,asset_category,size_label,description,location,notes,value_low,value_high,ai_value_low,ai_value_high,ai_confidence,ai_factors,ai_explanation,ai_approved,asset_documents(id,storage_path,file_name,file_type,file_size,title,doc_type,summary,ai_summary)"
     )
     .eq("estate_id", params.estateId)
     .order("created_at", { ascending: false });
@@ -121,8 +123,14 @@ export default async function AssetsPage({
                   </div>
                   <div className="text-sm text-white/70">
                     {asset.ai_value_low || asset.ai_value_high ? (
-                      <span className="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase text-emerald-200">
-                        AI estimated
+                      <span
+                        className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase ${
+                          asset.ai_approved
+                            ? "border-emerald-400/40 bg-emerald-500/10 text-emerald-200"
+                            : "border-amber-400/40 bg-amber-500/10 text-amber-200"
+                        }`}
+                      >
+                        {asset.ai_approved ? "AI approved" : "AI pending"}
                       </span>
                     ) : null}
                   </div>
@@ -151,6 +159,11 @@ export default async function AssetsPage({
                       ? `$${asset.value_low ?? "—"} to $${asset.value_high ?? "—"}`
                       : "No valuation yet"}
                 </div>
+                {asset.ai_explanation ? (
+                  <p className="mt-2 text-xs text-white/60">
+                    {asset.ai_explanation}
+                  </p>
+                ) : null}
                 {asset.location ? (
                   <p className="mt-3 text-sm text-white/60">
                     Location: {asset.location}
