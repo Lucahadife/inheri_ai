@@ -91,6 +91,8 @@ create or replace function public.is_estate_member(target_estate_id uuid)
 returns boolean
 language sql
 stable
+security definer
+set search_path = public
 as $$
   select exists (
     select 1
@@ -105,6 +107,8 @@ create or replace function public.is_estate_admin(target_estate_id uuid)
 returns boolean
 language sql
 stable
+security definer
+set search_path = public
 as $$
   select exists (
     select 1
@@ -175,7 +179,10 @@ create policy "estate members readable by members"
 on public.estate_members
 for select
 to authenticated
-using (public.is_estate_member(estate_id));
+using (
+  user_id = auth.uid()
+  or email = auth.email()
+);
 
 create policy "estate members insertable by admins"
 on public.estate_members
