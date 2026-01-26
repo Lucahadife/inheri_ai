@@ -10,6 +10,7 @@ type Asset = {
   value_high: number | null;
   ai_value_low: number | null;
   ai_value_high: number | null;
+  imageUrl?: string | null;
 };
 
 type ScenarioItem = {
@@ -150,6 +151,15 @@ export default function ScenarioBoard({
                       Drag
                     </span>
                   </div>
+                  {asset.imageUrl ? (
+                    <div className="mt-3 overflow-hidden rounded-2xl border border-white/10">
+                      <img
+                        alt={`${asset.name} document preview`}
+                        className="h-32 w-full object-cover"
+                        src={asset.imageUrl}
+                      />
+                    </div>
+                  ) : null}
                   <div className="mt-3 grid gap-3">
                     <label className="text-xs text-white/60">
                       Emotional score: {pref.emotionalScore}

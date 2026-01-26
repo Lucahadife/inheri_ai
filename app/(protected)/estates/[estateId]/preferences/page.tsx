@@ -32,7 +32,7 @@ export default async function PreferencesPage({
   const { data: assets } = await supabase
     .from("assets")
     .select(
-      "id,name,description,value_low,value_high,ai_value_low,ai_value_high"
+      "id,name,description,value_low,value_high,ai_value_low,ai_value_high,asset_documents(id,storage_path,file_name)"
     )
     .eq("estate_id", params.estateId)
     .order("created_at", { ascending: false });
@@ -87,6 +87,26 @@ export default async function PreferencesPage({
     assetId: item.asset_id,
   }));
 
+  const docEntries =
+    (assets ?? []).flatMap((asset) =>
+      (asset.asset_documents ?? []).map((doc) => ({
+        assetId: asset.id,
+        storage_path: doc.storage_path,
+        id: doc.id,
+      }))
+    ) ?? [];
+
+  const signedUrlEntries = await Promise.all(
+    docEntries.map(async (doc) => {
+      const { data } = await supabase.storage
+        .from("asset-docs")
+        .createSignedUrl(doc.storage_path, 60 * 60);
+      return [doc.assetId, data?.signedUrl ?? ""] as const;
+    })
+  );
+
+  const imageByAsset = new Map(signedUrlEntries);
+
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-16 text-white">
       <header className="flex flex-wrap items-center justify-between gap-4">
@@ -117,7 +137,10 @@ export default async function PreferencesPage({
         <h2 className="text-lg font-semibold">Scenarios & preferences</h2>
         <ScenarioBoard
           estateId={params.estateId}
-          assets={assets ?? []}
+          assets={(assets ?? []).map((asset) => ({
+            ...asset,
+            imageUrl: imageByAsset.get(asset.id) ?? null,
+          }))}
           scenarioItems={boardItems}
           preferences={(preferences ?? []).map((pref) => ({
             assetId: pref.asset_id,
