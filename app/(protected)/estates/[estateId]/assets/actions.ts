@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -26,7 +27,16 @@ export async function createAsset(formData: FormData) {
   const estateIdRaw = String(
     formData.get("estate_id") ?? formData.get("estateId") ?? ""
   );
-  const estateIdClean = normalizeEstateId(estateIdRaw);
+  const estatePath = String(formData.get("estate_path") ?? "").trim();
+  const estateFromPath =
+    estatePath.match(/\/estates\/([^/]+)\/assets/)?.[1] ?? "";
+  const referer = (await headers()).get("referer") ?? "";
+  const estateFromReferer =
+    referer.match(/\/estates\/([^/]+)\/assets/)?.[1] ?? "";
+  const estateIdClean =
+    normalizeEstateId(estateIdRaw) ||
+    normalizeEstateId(estateFromPath) ||
+    normalizeEstateId(estateFromReferer);
   const docFile = formData.get("document");
   const photoFiles = formData
     .getAll("asset_photos")
@@ -97,7 +107,7 @@ export async function createAsset(formData: FormData) {
 
   if (assetError || !asset) {
     redirect(
-      `/estates/${estateId}/assets?error=${encodeURIComponent(
+      `/estates/${estateIdClean}/assets?error=${encodeURIComponent(
         assetError?.message ?? "Failed"
       )}`
     );
@@ -117,7 +127,7 @@ export async function createAsset(formData: FormData) {
 
     if (uploadError) {
       redirect(
-        `/estates/${estateId}/assets?error=${encodeURIComponent(
+        `/estates/${estateIdClean}/assets?error=${encodeURIComponent(
           uploadError.message
         )}`
       );
@@ -140,7 +150,7 @@ export async function createAsset(formData: FormData) {
 
     if (docError) {
       redirect(
-        `/estates/${estateId}/assets?error=${encodeURIComponent(
+        `/estates/${estateIdClean}/assets?error=${encodeURIComponent(
           docError.message
         )}`
       );
@@ -162,7 +172,7 @@ export async function createAsset(formData: FormData) {
 
       if (uploadError) {
         redirect(
-          `/estates/${estateId}/assets?error=${encodeURIComponent(
+          `/estates/${estateIdClean}/assets?error=${encodeURIComponent(
             uploadError.message
           )}`
         );
@@ -183,7 +193,7 @@ export async function createAsset(formData: FormData) {
 
       if (photoError) {
         redirect(
-          `/estates/${estateId}/assets?error=${encodeURIComponent(
+          `/estates/${estateIdClean}/assets?error=${encodeURIComponent(
             photoError.message
           )}`
         );
