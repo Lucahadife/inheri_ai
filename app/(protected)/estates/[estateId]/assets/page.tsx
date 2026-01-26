@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { getRuleAcceptanceStatus } from "@/data/estate";
 import { createClient } from "@/data/supabase/server";
 import AssetForm from "@/ui/AssetForm";
 
@@ -73,12 +72,6 @@ export default async function AssetsPage({
 
   const signedUrlMap = new Map(signedUrlEntries);
 
-  const rulesStatus = await getRuleAcceptanceStatus(
-    supabase as any,
-    params.estateId
-  );
-  const rulesReady = rulesStatus.rulesAccepted;
-
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-16 text-white">
       <header className="flex flex-wrap items-center justify-between gap-4">
@@ -105,20 +98,9 @@ export default async function AssetsPage({
         </div>
       ) : null}
 
-      {!rulesReady ? (
-        <div className="rounded-2xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-          Estate rules must be created and accepted by all active members before
-          adding assets.
-        </div>
-      ) : null}
-
       <section className="grid gap-4 rounded-3xl border border-white/10 bg-white/5 p-8">
         <h2 className="text-lg font-semibold">Add an asset</h2>
-        <AssetForm
-          estateId={params.estateId}
-          action={createAsset}
-          disabled={!rulesReady}
-        />
+        <AssetForm estateId={params.estateId} action={createAsset} />
       </section>
 
       <section className="grid gap-4">
