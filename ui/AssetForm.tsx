@@ -133,6 +133,7 @@ export default function AssetForm({
   return (
     <form className="grid gap-5" action={action}>
       <input type="hidden" name="estate_id" value={estateId} />
+      <input type="hidden" name="estateId" value={estateId} />
       <fieldset className="grid gap-5" disabled={disabled}>
         <input type="hidden" name="ai_value_low" value={estimate?.low ?? ""} />
         <input type="hidden" name="ai_value_high" value={estimate?.high ?? ""} />
@@ -175,7 +176,6 @@ export default function AssetForm({
             id="asset-name"
             className="mt-2 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-sm text-white"
             name="name"
-            required
           />
         </label>
         <label className="text-sm text-white/70">
