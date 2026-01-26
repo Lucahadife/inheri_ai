@@ -100,10 +100,7 @@ export default async function AssetsPage({
 
       <section className="grid gap-4 rounded-3xl border border-white/10 bg-white/5 p-8">
         <h2 className="text-lg font-semibold">Add an asset</h2>
-        <AssetForm
-          estateId={params.estateId}
-          action={createAsset.bind(null, params.estateId)}
-        />
+        <AssetForm estateId={params.estateId} action={createAsset} />
       </section>
 
       <section className="grid gap-4">

@@ -1,6 +1,5 @@
 "use server";
 
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -15,17 +14,19 @@ const toNumber = (value: FormDataEntryValue | null) => {
 const sanitizeFileName = (fileName: string) =>
   fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
 
-export async function createAsset(estateId: string, formData: FormData) {
-  const estateIdRaw = String(estateId ?? "").trim();
-  const estatePath = String(formData.get("estate_path") ?? "").trim();
-  const estateFromPath = estatePath.match(/\/estates\/([^/]+)\/assets/)?.[1] ?? "";
-  const referer = (await headers()).get("referer") ?? "";
-  const estateFromReferer =
-    referer.match(/\/estates\/([^/]+)\/assets/)?.[1] ?? "";
-  const estateIdClean =
-    (estateIdRaw === "undefined" || estateIdRaw === "null" ? "" : estateIdRaw) ||
-    estateFromPath ||
-    estateFromReferer;
+const normalizeEstateId = (value: string) => {
+  const cleaned = value.trim();
+  if (!cleaned || cleaned === "undefined" || cleaned === "null") return "";
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(cleaned) ? cleaned : "";
+};
+
+export async function createAsset(formData: FormData) {
+  const estateIdRaw = String(
+    formData.get("estate_id") ?? formData.get("estateId") ?? ""
+  );
+  const estateIdClean = normalizeEstateId(estateIdRaw);
   const file = formData.get("document");
   const docTitle = String(formData.get("doc_title") ?? "").trim();
   const fallbackName =
@@ -54,7 +55,7 @@ export async function createAsset(estateId: string, formData: FormData) {
   const docTypeAi = String(formData.get("doc_type_ai") ?? "").trim();
 
   if (!estateIdClean) {
-    redirect(`/estates?error=Estate%20is%20missing.`);
+    redirect(`/estates?error=Estate%20id%20is%20missing%20or%20invalid.`);
   }
 
   const supabase = await createClient();
