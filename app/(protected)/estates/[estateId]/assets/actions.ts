@@ -14,11 +14,9 @@ const toNumber = (value: FormDataEntryValue | null) => {
 const sanitizeFileName = (fileName: string) =>
   fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
 
-export async function createAsset(formData: FormData) {
-  const estateIdRaw = String(
-    formData.get("estate_id") ?? formData.get("estateId") ?? ""
-  ).trim();
-  const estateId =
+export async function createAsset(estateId: string, formData: FormData) {
+  const estateIdRaw = String(estateId ?? "").trim();
+  const estateIdClean =
     estateIdRaw === "undefined" || estateIdRaw === "null" ? "" : estateIdRaw;
   const file = formData.get("document");
   const docTitle = String(formData.get("doc_title") ?? "").trim();
@@ -47,7 +45,7 @@ export async function createAsset(formData: FormData) {
   const aiSummary = String(formData.get("ai_summary") ?? "").trim();
   const docTypeAi = String(formData.get("doc_type_ai") ?? "").trim();
 
-  if (!estateId) {
+  if (!estateIdClean) {
     redirect(`/estates?error=Estate%20is%20missing.`);
   }
 
@@ -63,7 +61,7 @@ export async function createAsset(formData: FormData) {
   const { data: asset, error: assetError } = await supabase
     .from("assets")
     .insert({
-      estate_id: estateId,
+      estate_id: estateIdClean,
       name,
       asset_type: assetType || null,
       asset_category: assetCategory || null,
@@ -95,7 +93,7 @@ export async function createAsset(formData: FormData) {
 
   if (file instanceof File && file.size > 0) {
     const safeName = sanitizeFileName(file.name);
-    const storagePath = `${estateId}/${asset.id}/${Date.now()}-${safeName}`;
+    const storagePath = `${estateIdClean}/${asset.id}/${Date.now()}-${safeName}`;
     const buffer = Buffer.from(await file.arrayBuffer());
 
     const { error: uploadError } = await supabase.storage
@@ -136,7 +134,7 @@ export async function createAsset(formData: FormData) {
     }
   }
 
-  revalidatePath(`/estates/${estateId}/assets`);
-  revalidatePath(`/estates/${estateId}/preferences`);
-  redirect(`/estates/${estateId}/assets`);
+  revalidatePath(`/estates/${estateIdClean}/assets`);
+  revalidatePath(`/estates/${estateIdClean}/preferences`);
+  redirect(`/estates/${estateIdClean}/assets`);
 }
