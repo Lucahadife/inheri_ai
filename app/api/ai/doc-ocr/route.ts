@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 
-import { docOcrSchema } from "@/ai/schemas/doc-ocr";
-import { loadPrompt } from "@/ai/prompts";
+import pdfParse from "pdf-parse";
 import OpenAI from "openai";
+
+import { loadPrompt } from "@/ai/prompts";
+import { docOcrSchema } from "@/ai/schemas/doc-ocr";
 
 type OcrPayload = {
   image: string;
@@ -16,14 +18,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing image." }, { status: 400 });
   }
 
-  if (!process.env.OPENAI_API_KEY) {
-    return NextResponse.json({ error: "Missing OPENAI_API_KEY." }, { status: 500 });
+  if (body.mimeType === "application/pdf") {
+    const buffer = Buffer.from(body.image, "base64");
+    const result = await pdfParse(buffer);
+    return NextResponse.json(docOcrSchema.parse({ text: result.text ?? "" }));
   }
 
   if (!body.mimeType.startsWith("image/")) {
     return NextResponse.json(
-      { error: "OCR currently supports image uploads only." },
+      { error: "OCR currently supports image or PDF uploads only." },
       { status: 400 }
+    );
+  }
+
+  if (!process.env.OPENAI_API_KEY) {
+    return NextResponse.json(
+      { error: "Missing OPENAI_API_KEY." },
+      { status: 500 }
     );
   }
 

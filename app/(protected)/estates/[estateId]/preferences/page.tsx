@@ -33,7 +33,7 @@ export default async function PreferencesPage({
   const { data: assets } = await supabase
     .from("assets")
     .select(
-      "id,name,description,value_low,value_high,ai_value_low,ai_value_high,asset_documents(id,storage_path,file_name)"
+      "id,name,description,value_low,value_high,ai_value_low,ai_value_high,asset_documents(id,storage_path,file_name,file_type)"
     )
     .eq("estate_id", params.estateId)
     .order("created_at", { ascending: false });
@@ -88,13 +88,20 @@ export default async function PreferencesPage({
     assetId: item.asset_id,
   }));
 
+  const isImage = (doc: { file_type?: string | null; file_name?: string }) => {
+    if (doc.file_type?.startsWith("image/")) return true;
+    return /\.(png|jpe?g|gif|webp)$/i.test(doc.file_name ?? "");
+  };
+
   const docEntries =
     (assets ?? []).flatMap((asset) =>
-      (asset.asset_documents ?? []).map((doc) => ({
-        assetId: asset.id,
-        storage_path: doc.storage_path,
-        id: doc.id,
-      }))
+      (asset.asset_documents ?? [])
+        .filter(isImage)
+        .map((doc) => ({
+          assetId: asset.id,
+          storage_path: doc.storage_path,
+          id: doc.id,
+        }))
     ) ?? [];
 
   const signedUrlEntries = await Promise.all(

@@ -128,7 +128,7 @@ export default function ScenarioBoard({
           <p className="mt-2 text-sm text-white/60">
             Drag assets into a scenario and set emotional scores.
           </p>
-          <div className="mt-4 grid gap-4">
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
             {assets.map((asset) => {
               const pref = prefs.get(asset.id) ?? {
                 assetId: asset.id,
@@ -148,6 +148,11 @@ export default function ScenarioBoard({
                       <p className="text-sm font-semibold text-white">
                         {asset.name}
                       </p>
+                      {asset.description ? (
+                        <p className="mt-1 text-xs text-white/50">
+                          {asset.description}
+                        </p>
+                      ) : null}
                       <p className="text-xs text-white/50">
                         Midpoint ${estimateMid(asset).toFixed(0)}
                       </p>

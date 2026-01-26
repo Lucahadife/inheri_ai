@@ -100,8 +100,8 @@ export default function AssetForm({
     setOcrError(null);
 
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setOcrError("OCR currently supports image uploads only.");
+    if (!(file.type.startsWith("image/") || file.type === "application/pdf")) {
+      setOcrError("OCR currently supports image or PDF uploads only.");
       return;
     }
 
