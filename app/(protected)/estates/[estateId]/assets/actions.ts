@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -18,9 +19,13 @@ export async function createAsset(estateId: string, formData: FormData) {
   const estateIdRaw = String(estateId ?? "").trim();
   const estatePath = String(formData.get("estate_path") ?? "").trim();
   const estateFromPath = estatePath.match(/\/estates\/([^/]+)\/assets/)?.[1] ?? "";
+  const referer = (await headers()).get("referer") ?? "";
+  const estateFromReferer =
+    referer.match(/\/estates\/([^/]+)\/assets/)?.[1] ?? "";
   const estateIdClean =
     (estateIdRaw === "undefined" || estateIdRaw === "null" ? "" : estateIdRaw) ||
-    estateFromPath;
+    estateFromPath ||
+    estateFromReferer;
   const file = formData.get("document");
   const docTitle = String(formData.get("doc_title") ?? "").trim();
   const fallbackName =
