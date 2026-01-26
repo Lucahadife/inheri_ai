@@ -15,9 +15,11 @@ const sanitizeFileName = (fileName: string) =>
   fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
 
 export async function createAsset(formData: FormData) {
-  const estateId = String(
+  const estateIdRaw = String(
     formData.get("estate_id") ?? formData.get("estateId") ?? ""
-  );
+  ).trim();
+  const estateId =
+    estateIdRaw === "undefined" || estateIdRaw === "null" ? "" : estateIdRaw;
   const file = formData.get("document");
   const docTitle = String(formData.get("doc_title") ?? "").trim();
   const fallbackName =

@@ -33,7 +33,11 @@ export default function AssetForm({
   const pathname = usePathname();
   const derivedEstateId = useMemo(() => {
     const match = pathname.match(/\/estates\/([^/]+)\/assets/);
-    return match?.[1] ?? "";
+    const value = match?.[1] ?? "";
+    if (!value || value === "undefined" || value === "null") {
+      return "";
+    }
+    return value;
   }, [pathname]);
   const finalEstateId = estateId || derivedEstateId;
   const [estimate, setEstimate] = useState<ValueEstimate | null>(null);
