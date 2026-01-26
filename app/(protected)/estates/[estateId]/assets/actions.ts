@@ -16,8 +16,11 @@ const sanitizeFileName = (fileName: string) =>
 
 export async function createAsset(estateId: string, formData: FormData) {
   const estateIdRaw = String(estateId ?? "").trim();
+  const estatePath = String(formData.get("estate_path") ?? "").trim();
+  const estateFromPath = estatePath.match(/\/estates\/([^/]+)\/assets/)?.[1] ?? "";
   const estateIdClean =
-    estateIdRaw === "undefined" || estateIdRaw === "null" ? "" : estateIdRaw;
+    (estateIdRaw === "undefined" || estateIdRaw === "null" ? "" : estateIdRaw) ||
+    estateFromPath;
   const file = formData.get("document");
   const docTitle = String(formData.get("doc_title") ?? "").trim();
   const fallbackName =
