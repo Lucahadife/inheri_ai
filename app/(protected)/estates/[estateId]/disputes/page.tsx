@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { getRuleAcceptanceStatus } from "@/data/estate";
 import { createClient } from "@/data/supabase/server";
 import AiResolve from "@/ui/AiResolve";
 
@@ -32,6 +33,12 @@ export default async function DisputesPage({ params }: DisputesPageProps) {
     return prefs.length >= 2 && prefs[0] >= 4 && prefs[1] >= 4;
   });
 
+  const rulesStatus = await getRuleAcceptanceStatus(
+    supabase as any,
+    params.estateId
+  );
+  const rulesReady = rulesStatus.rulesAccepted;
+
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-16 text-white">
       <header className="flex flex-wrap items-center justify-between gap-4">
@@ -55,6 +62,11 @@ export default async function DisputesPage({ params }: DisputesPageProps) {
       </header>
 
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
+        {!rulesReady ? (
+          <div className="rounded-2xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+            Resolve rule acceptance before final dispute mediation.
+          </div>
+        ) : null}
         <h2 className="text-lg font-semibold">Likely conflicts</h2>
         <div className="mt-4 grid gap-3">
           {conflictAssets.length ? (

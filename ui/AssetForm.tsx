@@ -5,6 +5,7 @@ import { useState } from "react";
 type AssetFormProps = {
   estateId: string;
   action: (formData: FormData) => void;
+  disabled?: boolean;
 };
 
 type ValueEstimate = {
@@ -23,13 +24,20 @@ type DocSummary = {
   summary: string;
 };
 
-export default function AssetForm({ estateId, action }: AssetFormProps) {
+export default function AssetForm({
+  estateId,
+  action,
+  disabled = false,
+}: AssetFormProps) {
   const [estimate, setEstimate] = useState<ValueEstimate | null>(null);
   const [docSummary, setDocSummary] = useState<DocSummary | null>(null);
   const [loadingEstimate, setLoadingEstimate] = useState(false);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [hasDoc, setHasDoc] = useState(false);
   const [approved, setApproved] = useState(false);
+  const [docText, setDocText] = useState("");
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrError, setOcrError] = useState<string | null>(null);
 
   const handleEstimate = async () => {
     setLoadingEstimate(true);
@@ -43,8 +51,7 @@ export default function AssetForm({ estateId, action }: AssetFormProps) {
       )?.value,
       notes: (document.getElementById("asset-notes") as HTMLTextAreaElement)
         ?.value,
-      doc_text: (document.getElementById("asset-doc-text") as HTMLTextAreaElement)
-        ?.value,
+      doc_text: docText,
       doc_title: (document.getElementById("asset-doc-title") as HTMLInputElement)
         ?.value,
       doc_type: (document.getElementById("asset-doc-type") as HTMLInputElement)
@@ -64,8 +71,7 @@ export default function AssetForm({ estateId, action }: AssetFormProps) {
   const handleDocSummary = async () => {
     setLoadingSummary(true);
     const payload = {
-      doc_text: (document.getElementById("asset-doc-text") as HTMLTextAreaElement)
-        ?.value,
+      doc_text: docText,
     };
     const response = await fetch("/api/ai/doc-summary", {
       method: "POST",
@@ -77,40 +83,80 @@ export default function AssetForm({ estateId, action }: AssetFormProps) {
     setLoadingSummary(false);
   };
 
+  const handleDocUpload = async (file?: File | null) => {
+    setHasDoc(Boolean(file));
+    setOcrError(null);
+
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setOcrError("OCR currently supports image uploads only.");
+      return;
+    }
+
+    setOcrLoading(true);
+    const buffer = await file.arrayBuffer();
+    const base64 = btoa(
+      String.fromCharCode(...new Uint8Array(buffer))
+    );
+
+    const response = await fetch("/api/ai/doc-ocr", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        image: base64,
+        mimeType: file.type,
+      }),
+    });
+    const data = await response.json();
+
+    if (data?.error) {
+      setOcrError(data.error);
+    } else {
+      setDocText(data.text ?? "");
+    }
+
+    setOcrLoading(false);
+  };
+
   return (
     <form className="grid gap-5" action={action}>
-      <input type="hidden" name="estate_id" value={estateId} />
-      <input type="hidden" name="ai_value_low" value={estimate?.low ?? ""} />
-      <input type="hidden" name="ai_value_high" value={estimate?.high ?? ""} />
-      <input
-        type="hidden"
-        name="ai_confidence"
-        value={estimate?.confidence ?? ""}
-      />
-      <input
-        type="hidden"
-        name="ai_factors"
-        value={estimate?.factors?.join("|") ?? ""}
-      />
-      <input
-        type="hidden"
-        name="ai_disclaimer"
-        value={estimate?.disclaimer ?? ""}
-      />
-      <input
-        type="hidden"
-        name="ai_explanation"
-        value={estimate?.explanation ?? ""}
-      />
-      <input type="hidden" name="ai_approved" value={approved ? "1" : "0"} />
-      <input type="hidden" name="ai_summary" value={docSummary?.summary ?? ""} />
-      <input
-        type="hidden"
-        name="doc_type_ai"
-        value={docSummary?.doc_type ?? ""}
-      />
+      <fieldset className="grid gap-5" disabled={disabled}>
+        <input type="hidden" name="estate_id" value={estateId} />
+        <input type="hidden" name="ai_value_low" value={estimate?.low ?? ""} />
+        <input type="hidden" name="ai_value_high" value={estimate?.high ?? ""} />
+        <input
+          type="hidden"
+          name="ai_confidence"
+          value={estimate?.confidence ?? ""}
+        />
+        <input
+          type="hidden"
+          name="ai_factors"
+          value={estimate?.factors?.join("|") ?? ""}
+        />
+        <input
+          type="hidden"
+          name="ai_disclaimer"
+          value={estimate?.disclaimer ?? ""}
+        />
+        <input
+          type="hidden"
+          name="ai_explanation"
+          value={estimate?.explanation ?? ""}
+        />
+        <input type="hidden" name="ai_approved" value={approved ? "1" : "0"} />
+        <input
+          type="hidden"
+          name="ai_summary"
+          value={docSummary?.summary ?? ""}
+        />
+        <input
+          type="hidden"
+          name="doc_type_ai"
+          value={docSummary?.doc_type ?? ""}
+        />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
         <label className="text-sm text-white/70">
           Asset name
           <input
@@ -227,7 +273,7 @@ export default function AssetForm({ estateId, action }: AssetFormProps) {
             name="document"
             type="file"
             accept="image/*,.pdf"
-            onChange={(event) => setHasDoc(Boolean(event.target.files?.length))}
+            onChange={(event) => handleDocUpload(event.target.files?.[0])}
           />
         </label>
         <label className="text-sm text-white/70">
@@ -237,8 +283,14 @@ export default function AssetForm({ estateId, action }: AssetFormProps) {
             className="mt-2 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white"
             name="doc_text"
             rows={3}
+            value={docText}
+            onChange={(event) => setDocText(event.target.value)}
           />
         </label>
+        <div className="text-xs text-white/50">
+          {ocrLoading ? "Extracting text from the document..." : null}
+          {!ocrLoading && ocrError ? ocrError : null}
+        </div>
         <div className="flex flex-wrap items-center gap-3">
           <button
             className="rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white"
@@ -306,12 +358,13 @@ export default function AssetForm({ estateId, action }: AssetFormProps) {
         )}
       </div>
 
-      <button
-        className="w-fit rounded-2xl bg-white px-6 py-2 text-sm font-semibold text-zinc-900"
-        type="submit"
-      >
-        Save asset
-      </button>
+        <button
+          className="w-fit rounded-2xl bg-white px-6 py-2 text-sm font-semibold text-zinc-900 disabled:opacity-60"
+          type="submit"
+        >
+          Save asset
+        </button>
+      </fieldset>
     </form>
   );
 }

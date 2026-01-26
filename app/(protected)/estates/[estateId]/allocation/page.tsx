@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { getRuleAcceptanceStatus } from "@/data/estate";
 import { createClient } from "@/data/supabase/server";
 import {
   buildAllocationPlans,
@@ -49,6 +50,12 @@ export default async function AllocationPage({ params }: AllocationPageProps) {
     .from("estate_rules")
     .select("title,description")
     .eq("estate_id", params.estateId);
+
+  const rulesStatus = await getRuleAcceptanceStatus(
+    supabase as any,
+    params.estateId
+  );
+  const rulesReady = rulesStatus.rulesAccepted;
 
   const heirs: Heir[] = (members ?? [])
     .filter((member) => member.user_id)
@@ -129,6 +136,12 @@ export default async function AllocationPage({ params }: AllocationPageProps) {
       </header>
 
       <section className="grid gap-6">
+        {!rulesReady ? (
+          <div className="rounded-2xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+            Rules are not fully accepted. Allocation results may change once
+            heirs agree.
+          </div>
+        ) : null}
         {[planA, planB].map((plan) => (
           <div
             className="rounded-3xl border border-white/10 bg-white/5 p-6"

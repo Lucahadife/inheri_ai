@@ -29,6 +29,7 @@ type ScenarioBoardProps = {
   assets: Asset[];
   scenarioItems: ScenarioItem[];
   preferences: Preference[];
+  disabled?: boolean;
 };
 
 const scenarios = ["A", "B", "C"] as const;
@@ -44,6 +45,7 @@ export default function ScenarioBoard({
   assets,
   scenarioItems,
   preferences,
+  disabled = false,
 }: ScenarioBoardProps) {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [prefs, setPrefs] = useState(() => {
@@ -65,6 +67,7 @@ export default function ScenarioBoard({
   }, [assets, items]);
 
   const handleDrop = async (scenario: string) => {
+    if (disabled) return;
     if (!draggingId) return;
     const payload = {
       estateId,
@@ -87,6 +90,7 @@ export default function ScenarioBoard({
   };
 
   const handleRemove = async (scenario: string, assetId: string) => {
+    if (disabled) return;
     await fetch("/api/scenarios", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -103,6 +107,7 @@ export default function ScenarioBoard({
   };
 
   const handleSavePreference = async (assetId: string) => {
+    if (disabled) return;
     const current = prefs.get(assetId);
     await fetch("/api/preferences", {
       method: "POST",
@@ -134,7 +139,7 @@ export default function ScenarioBoard({
                 <div
                   className="rounded-2xl border border-white/10 bg-black/30 p-4"
                   key={asset.id}
-                  draggable
+                  draggable={!disabled}
                   onDragStart={() => setDraggingId(asset.id)}
                   onDragEnd={() => setDraggingId(null)}
                 >
@@ -169,6 +174,7 @@ export default function ScenarioBoard({
                         min={0}
                         max={5}
                         value={pref.emotionalScore}
+                        disabled={disabled}
                         onChange={(event) =>
                           setPrefs((prev) => {
                             const next = new Map(prev);
@@ -185,6 +191,7 @@ export default function ScenarioBoard({
                       className="rounded-2xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white"
                       placeholder="Preference note"
                       value={pref.note ?? ""}
+                      disabled={disabled}
                       onChange={(event) =>
                         setPrefs((prev) => {
                           const next = new Map(prev);
@@ -200,6 +207,7 @@ export default function ScenarioBoard({
                       className="w-fit rounded-full border border-white/15 px-3 py-1 text-xs text-white/70"
                       onClick={() => handleSavePreference(asset.id)}
                       type="button"
+                      disabled={disabled}
                     >
                       Save preference
                     </button>
@@ -237,6 +245,7 @@ export default function ScenarioBoard({
                       className="text-xs text-white/50 hover:text-white"
                       onClick={() => handleRemove(scenario, asset.id)}
                       type="button"
+                      disabled={disabled}
                     >
                       Remove
                     </button>

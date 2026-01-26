@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { getRuleAcceptanceStatus } from "@/data/estate";
 import { createClient } from "@/data/supabase/server";
 
 type FinalPageProps = {
@@ -20,6 +21,12 @@ export default async function FinalPage({ params }: FinalPageProps) {
     .from("assets")
     .select("id,name,asset_type,asset_category")
     .eq("estate_id", params.estateId);
+
+  const rulesStatus = await getRuleAcceptanceStatus(
+    supabase as any,
+    params.estateId
+  );
+  const rulesReady = rulesStatus.rulesAccepted;
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-16 text-white">
@@ -44,6 +51,11 @@ export default async function FinalPage({ params }: FinalPageProps) {
       </header>
 
       <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
+        {!rulesReady ? (
+          <div className="rounded-2xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+            Final documents should be prepared after rules are accepted.
+          </div>
+        ) : null}
         <h2 className="text-lg font-semibold">Required documents</h2>
         <div className="mt-4 grid gap-4">
           {(assets ?? []).length ? (
