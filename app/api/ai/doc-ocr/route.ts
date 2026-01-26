@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-import pdfParse from "pdf-parse";
 import OpenAI from "openai";
+import { PDFParse } from "pdf-parse";
 
 import { loadPrompt } from "@/ai/prompts";
 import { docOcrSchema } from "@/ai/schemas/doc-ocr";
@@ -20,7 +20,9 @@ export async function POST(request: Request) {
 
   if (body.mimeType === "application/pdf") {
     const buffer = Buffer.from(body.image, "base64");
-    const result = await pdfParse(buffer);
+    const parser = new PDFParse({ data: buffer });
+    const result = await parser.getText();
+    await parser.destroy();
     return NextResponse.json(docOcrSchema.parse({ text: result.text ?? "" }));
   }
 

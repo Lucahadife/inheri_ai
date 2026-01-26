@@ -15,7 +15,11 @@ const sanitizeFileName = (fileName: string) =>
 
 export async function createAsset(formData: FormData) {
   const estateId = String(formData.get("estate_id") ?? "");
-  const name = String(formData.get("name") ?? "").trim();
+  const file = formData.get("document");
+  const docTitle = String(formData.get("doc_title") ?? "").trim();
+  const fallbackName =
+    docTitle || (file instanceof File ? file.name : "") || "Untitled asset";
+  const name = String(formData.get("name") ?? "").trim() || fallbackName;
   const description = String(formData.get("description") ?? "").trim();
   const location = String(formData.get("location") ?? "").trim();
   const notes = String(formData.get("notes") ?? "").trim();
@@ -33,12 +37,10 @@ export async function createAsset(formData: FormData) {
   const aiDisclaimer = String(formData.get("ai_disclaimer") ?? "").trim();
   const aiExplanation = String(formData.get("ai_explanation") ?? "").trim();
   const aiApproved = String(formData.get("ai_approved") ?? "") === "1";
-  const docTitle = String(formData.get("doc_title") ?? "").trim();
   const docType = String(formData.get("doc_type") ?? "").trim();
   const docText = String(formData.get("doc_text") ?? "").trim();
   const aiSummary = String(formData.get("ai_summary") ?? "").trim();
   const docTypeAi = String(formData.get("doc_type_ai") ?? "").trim();
-  const file = formData.get("document");
 
   if (!estateId || !name) {
     redirect(`/estates/${estateId}/assets?error=Name%20is%20required.`);
