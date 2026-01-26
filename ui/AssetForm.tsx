@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 
 type AssetFormProps = {
   estateId: string;
@@ -29,6 +30,12 @@ export default function AssetForm({
   action,
   disabled = false,
 }: AssetFormProps) {
+  const pathname = usePathname();
+  const derivedEstateId = useMemo(() => {
+    const match = pathname.match(/\/estates\/([^/]+)\/assets/);
+    return match?.[1] ?? "";
+  }, [pathname]);
+  const finalEstateId = estateId || derivedEstateId;
   const [estimate, setEstimate] = useState<ValueEstimate | null>(null);
   const [docSummary, setDocSummary] = useState<DocSummary | null>(null);
   const [loadingEstimate, setLoadingEstimate] = useState(false);
@@ -132,8 +139,8 @@ export default function AssetForm({
 
   return (
     <form className="grid gap-5" action={action}>
-      <input type="hidden" name="estate_id" value={estateId} />
-      <input type="hidden" name="estateId" value={estateId} />
+      <input type="hidden" name="estate_id" value={finalEstateId} />
+      <input type="hidden" name="estateId" value={finalEstateId} />
       <fieldset className="grid gap-5" disabled={disabled}>
         <input type="hidden" name="ai_value_low" value={estimate?.low ?? ""} />
         <input type="hidden" name="ai_value_high" value={estimate?.high ?? ""} />
