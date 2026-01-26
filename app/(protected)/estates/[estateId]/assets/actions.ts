@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/data/supabase/server";
@@ -42,8 +43,8 @@ export async function createAsset(formData: FormData) {
   const aiSummary = String(formData.get("ai_summary") ?? "").trim();
   const docTypeAi = String(formData.get("doc_type_ai") ?? "").trim();
 
-  if (!estateId || !name) {
-    redirect(`/estates/${estateId}/assets?error=Name%20is%20required.`);
+  if (!estateId) {
+    redirect(`/estates?error=Estate%20is%20missing.`);
   }
 
   const supabase = await createClient();
@@ -131,5 +132,7 @@ export async function createAsset(formData: FormData) {
     }
   }
 
+  revalidatePath(`/estates/${estateId}/assets`);
+  revalidatePath(`/estates/${estateId}/preferences`);
   redirect(`/estates/${estateId}/assets`);
 }
