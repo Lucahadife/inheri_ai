@@ -38,9 +38,11 @@ export default function AssetForm({
   const [docText, setDocText] = useState("");
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrError, setOcrError] = useState<string | null>(null);
+  const [estimateError, setEstimateError] = useState<string | null>(null);
 
   const handleEstimate = async () => {
     setLoadingEstimate(true);
+    setEstimateError(null);
     const payload = {
       name: (document.getElementById("asset-name") as HTMLInputElement)?.value,
       description: (
@@ -58,13 +60,23 @@ export default function AssetForm({
         ?.value,
       doc_summary: docSummary?.summary ?? "",
     };
+    if (!docText.trim()) {
+      setEstimateError("Upload a document and extract text first.");
+      setLoadingEstimate(false);
+      return;
+    }
+
     const response = await fetch("/api/ai/value-estimate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const data = (await response.json()) as ValueEstimate;
-    setEstimate(data);
+    const data = await response.json();
+    if (!response.ok) {
+      setEstimateError(data?.error ?? "AI estimate failed.");
+    } else {
+      setEstimate(data as ValueEstimate);
+    }
     setLoadingEstimate(false);
   };
 
@@ -333,6 +345,11 @@ export default function AssetForm({
             {loadingEstimate ? "Estimating..." : "Get AI estimate"}
           </button>
         </div>
+        {estimateError ? (
+          <div className="rounded-2xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-xs text-rose-100">
+            {estimateError}
+          </div>
+        ) : null}
         {estimate ? (
           <div className="grid gap-2 text-xs text-white/70">
             <div>

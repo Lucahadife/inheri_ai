@@ -14,8 +14,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const prompt = await loadPrompt("value-estimate.txt");
-  const result = await generateJson(prompt, body, valueEstimateSchema);
+  try {
+    const prompt = await loadPrompt("value-estimate.txt");
+    const result = await generateJson(prompt, body, valueEstimateSchema);
 
-  return NextResponse.json(result);
+    return NextResponse.json(result);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "AI estimate failed.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
