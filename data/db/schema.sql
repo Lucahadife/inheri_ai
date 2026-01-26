@@ -45,6 +45,7 @@ create table if not exists public.asset_documents (
   file_name text not null,
   file_type text,
   file_size integer,
+  doc_role text not null default 'document' check (doc_role in ('document', 'photo')),
   uploaded_by uuid not null references auth.users(id),
   created_at timestamptz not null default now()
 );
@@ -328,7 +329,8 @@ alter table public.asset_documents
   add column if not exists doc_type text,
   add column if not exists summary text,
   add column if not exists ai_summary text,
-  add column if not exists doc_text text;
+  add column if not exists doc_text text,
+  add column if not exists doc_role text default 'document';
 
 create table if not exists public.estate_rules (
   id uuid primary key default gen_random_uuid(),

@@ -27,10 +27,13 @@ export async function createAsset(formData: FormData) {
     formData.get("estate_id") ?? formData.get("estateId") ?? ""
   );
   const estateIdClean = normalizeEstateId(estateIdRaw);
-  const file = formData.get("document");
+  const docFile = formData.get("document");
+  const photoFiles = formData
+    .getAll("asset_photos")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
   const docTitle = String(formData.get("doc_title") ?? "").trim();
   const fallbackName =
-    docTitle || (file instanceof File ? file.name : "") || "Untitled asset";
+    docTitle || (docFile instanceof File ? docFile.name : "") || "Untitled asset";
   const name = String(formData.get("name") ?? "").trim() || fallbackName;
   const description = String(formData.get("description") ?? "").trim();
   const location = String(formData.get("location") ?? "").trim();
@@ -100,15 +103,15 @@ export async function createAsset(formData: FormData) {
     );
   }
 
-  if (file instanceof File && file.size > 0) {
-    const safeName = sanitizeFileName(file.name);
-    const storagePath = `${estateIdClean}/${asset.id}/${Date.now()}-${safeName}`;
-    const buffer = Buffer.from(await file.arrayBuffer());
+  if (docFile instanceof File && docFile.size > 0) {
+    const safeName = sanitizeFileName(docFile.name);
+    const storagePath = `${estateIdClean}/${asset.id}/docs/${Date.now()}-${safeName}`;
+    const buffer = Buffer.from(await docFile.arrayBuffer());
 
     const { error: uploadError } = await supabase.storage
       .from("asset-docs")
       .upload(storagePath, buffer, {
-        contentType: file.type || "application/octet-stream",
+        contentType: docFile.type || "application/octet-stream",
         upsert: false,
       });
 
@@ -123,14 +126,15 @@ export async function createAsset(formData: FormData) {
     const { error: docError } = await supabase.from("asset_documents").insert({
       asset_id: asset.id,
       storage_path: storagePath,
-      file_name: file.name,
-      file_type: file.type || null,
-      file_size: file.size,
-      title: docTitle || file.name,
+      file_name: docFile.name,
+      file_type: docFile.type || null,
+      file_size: docFile.size,
+      title: docTitle || docFile.name,
       doc_type: docTypeAi || docType || null,
       summary: docText || null,
       ai_summary: aiSummary || null,
       doc_text: docText || null,
+      doc_role: "document",
       uploaded_by: user.id,
     });
 
@@ -140,6 +144,50 @@ export async function createAsset(formData: FormData) {
           docError.message
         )}`
       );
+    }
+  }
+
+  if (photoFiles.length) {
+    for (const photo of photoFiles) {
+      const safeName = sanitizeFileName(photo.name);
+      const storagePath = `${estateIdClean}/${asset.id}/photos/${Date.now()}-${safeName}`;
+      const buffer = Buffer.from(await photo.arrayBuffer());
+
+      const { error: uploadError } = await supabase.storage
+        .from("asset-docs")
+        .upload(storagePath, buffer, {
+          contentType: photo.type || "application/octet-stream",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        redirect(
+          `/estates/${estateId}/assets?error=${encodeURIComponent(
+            uploadError.message
+          )}`
+        );
+      }
+
+      const { error: photoError } = await supabase
+        .from("asset_documents")
+        .insert({
+          asset_id: asset.id,
+          storage_path: storagePath,
+          file_name: photo.name,
+          file_type: photo.type || null,
+          file_size: photo.size,
+          title: photo.name,
+          doc_role: "photo",
+          uploaded_by: user.id,
+        });
+
+      if (photoError) {
+        redirect(
+          `/estates/${estateId}/assets?error=${encodeURIComponent(
+            photoError.message
+          )}`
+        );
+      }
     }
   }
 

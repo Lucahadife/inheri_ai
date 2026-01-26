@@ -16,6 +16,7 @@ type AssetDocument = {
   file_name: string;
   file_type: string | null;
   file_size: number | null;
+  doc_role?: string | null;
   title?: string | null;
   doc_type?: string | null;
   summary?: string | null;
@@ -52,10 +53,22 @@ export default async function AssetsPage({
   const { data: assets } = await supabase
     .from("assets")
     .select(
-      "id,name,asset_type,asset_category,size_label,description,location,notes,value_low,value_high,ai_value_low,ai_value_high,ai_confidence,ai_factors,ai_explanation,ai_approved,asset_documents(id,storage_path,file_name,file_type,file_size,title,doc_type,summary,ai_summary)"
+      "id,name,asset_type,asset_category,size_label,description,location,notes,value_low,value_high,ai_value_low,ai_value_high,ai_confidence,ai_factors,ai_explanation,ai_approved,asset_documents(id,storage_path,file_name,file_type,file_size,doc_role,title,doc_type,summary,ai_summary)"
     )
     .eq("estate_id", params.estateId)
     .order("created_at", { ascending: false });
+
+  const isImage = (doc: AssetDocument) => {
+    if (doc.file_type?.startsWith("image/")) return true;
+    return /\.(png|jpe?g|gif|webp)$/i.test(doc.file_name ?? "");
+  };
+
+  const isPhotoDoc = (doc: AssetDocument) =>
+    doc.doc_role === "photo" || (!doc.doc_role && isImage(doc));
+
+  const isDocumentDoc = (doc: AssetDocument) =>
+    doc.doc_role === "document" ||
+    (!doc.doc_role && !isImage(doc));
 
   const documents = (assets ?? [])
     .flatMap((asset) => asset.asset_documents ?? [])
@@ -175,37 +188,57 @@ export default async function AssetsPage({
                   </p>
                 ) : null}
                 <div className="mt-4 grid gap-2 text-sm text-white/70">
-                  {(asset.asset_documents ?? []).length ? (
-                    (asset.asset_documents ?? []).map((doc) => (
-                      <div
-                        className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/30 px-3 py-2"
-                        key={doc.id}
-                      >
-                        <div>
-                          <p className="text-xs font-semibold text-white">
-                            {doc.title || doc.file_name}
-                          </p>
-                          <p className="text-xs text-white/50">
-                            {doc.doc_type || "Document"}
-                          </p>
-                          {doc.ai_summary || doc.summary ? (
-                            <p className="mt-1 text-xs text-white/60">
-                              {(doc.ai_summary || doc.summary) as string}
+                  {(asset.asset_documents ?? []).filter(isPhotoDoc).length ? (
+                    <div className="flex flex-wrap gap-2">
+                      {(asset.asset_documents ?? [])
+                        .filter(isPhotoDoc)
+                        .map((doc) => (
+                          <img
+                            key={doc.id}
+                            className="h-16 w-16 rounded-2xl border border-white/10 object-cover"
+                            src={signedUrlMap.get(doc.id) || ""}
+                            alt={doc.title || doc.file_name}
+                          />
+                        ))}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-white/50">
+                      No photos uploaded.
+                    </span>
+                  )}
+                  {(asset.asset_documents ?? []).filter(isDocumentDoc).length ? (
+                    (asset.asset_documents ?? [])
+                      .filter(isDocumentDoc)
+                      .map((doc) => (
+                        <div
+                          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/30 px-3 py-2"
+                          key={doc.id}
+                        >
+                          <div>
+                            <p className="text-xs font-semibold text-white">
+                              {doc.title || doc.file_name}
                             </p>
-                          ) : null}
+                            <p className="text-xs text-white/50">
+                              {doc.doc_type || "Document"}
+                            </p>
+                            {doc.ai_summary || doc.summary ? (
+                              <p className="mt-1 text-xs text-white/60">
+                                {(doc.ai_summary || doc.summary) as string}
+                              </p>
+                            ) : null}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <a
+                              className="rounded-full border border-white/10 px-3 py-1 text-xs uppercase text-white/70"
+                              href={signedUrlMap.get(doc.id) || "#"}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              View
+                            </a>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <a
-                            className="rounded-full border border-white/10 px-3 py-1 text-xs uppercase text-white/70"
-                            href={signedUrlMap.get(doc.id) || "#"}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            View
-                          </a>
-                        </div>
-                      </div>
-                    ))
+                      ))
                   ) : (
                     <span className="text-xs text-white/50">
                       No documents uploaded.
@@ -218,7 +251,8 @@ export default async function AssetsPage({
                       Missing valuation
                     </span>
                   ) : null}
-                  {!asset.asset_documents?.length ? (
+                  {(asset.asset_documents ?? []).filter(isDocumentDoc).length ===
+                  0 ? (
                     <span className="rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1 text-amber-100">
                       Missing documents
                     </span>

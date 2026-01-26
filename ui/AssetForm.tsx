@@ -50,6 +50,7 @@ export default function AssetForm({
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrError, setOcrError] = useState<string | null>(null);
   const [estimateError, setEstimateError] = useState<string | null>(null);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
 
   const handleEstimate = async () => {
     setLoadingEstimate(true);
@@ -139,6 +140,19 @@ export default function AssetForm({
     }
 
     setOcrLoading(false);
+  };
+
+  const handlePhotoUpload = (files?: FileList | null) => {
+    if (!files || files.length === 0) {
+      setPhotoPreviews([]);
+      return;
+    }
+
+    const nextPreviews = Array.from(files)
+      .filter((file) => file.type.startsWith("image/"))
+      .slice(0, 6)
+      .map((file) => URL.createObjectURL(file));
+    setPhotoPreviews(nextPreviews);
   };
 
   return (
@@ -269,8 +283,31 @@ export default function AssetForm({
 
       <div className="grid gap-4 rounded-3xl border border-white/10 bg-black/30 p-5">
         <h3 className="text-sm font-semibold text-white">
-          Document intelligence
+          Photos & document intelligence
         </h3>
+        <label className="text-sm text-white/70">
+          Asset photos (used on cards)
+          <input
+            className="mt-2 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white"
+            name="asset_photos"
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={(event) => handlePhotoUpload(event.target.files)}
+          />
+        </label>
+        {photoPreviews.length ? (
+          <div className="grid grid-cols-3 gap-3">
+            {photoPreviews.map((src, index) => (
+              <img
+                key={`${src}-${index}`}
+                className="h-24 w-full rounded-2xl border border-white/10 object-cover"
+                src={src}
+                alt={`Asset photo preview ${index + 1}`}
+              />
+            ))}
+          </div>
+        ) : null}
         <div className="grid gap-4 lg:grid-cols-2">
           <label className="text-sm text-white/70">
             Doc title
@@ -291,7 +328,7 @@ export default function AssetForm({
           </label>
         </div>
         <label className="text-sm text-white/70">
-          Upload doc photo
+          Upload AI doc (PDF or image)
           <input
             className="mt-2 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white"
             name="document"
