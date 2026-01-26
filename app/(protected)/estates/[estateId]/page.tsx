@@ -4,28 +4,32 @@ import { createClient } from "@/data/supabase/server";
 import DonutChart from "@/ui/DonutChart";
 import ProgressSteps from "@/ui/ProgressSteps";
 
+export const dynamic = "force-dynamic";
+
 type EstateDetailPageProps = {
-  params: { estateId: string };
-  searchParams?: { error?: string } | Promise<{ error?: string }>;
+  params: Promise<{ estateId: string }>;
+  searchParams?: Promise<{ error?: string }>;
 };
 
 export default async function EstateDetailPage({
   params,
   searchParams,
 }: EstateDetailPageProps) {
-  const resolvedSearchParams = await Promise.resolve(searchParams);
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
+  const estateId = resolvedParams.estateId;
   const supabase = await createClient();
 
   const { data: estate } = await supabase
     .from("estates")
     .select("id,name,description,created_at")
-    .eq("id", params.estateId)
+    .eq("id", estateId)
     .single();
 
   const { data: members } = await supabase
     .from("estate_members")
     .select("id,email,role,status,user_id")
-    .eq("estate_id", params.estateId)
+    .eq("estate_id", estateId)
     .order("created_at", { ascending: true });
 
   const { data: assets } = await supabase
@@ -33,14 +37,14 @@ export default async function EstateDetailPage({
     .select(
       "id,name,asset_category,asset_type,value_low,value_high,ai_value_low,ai_value_high"
     )
-    .eq("estate_id", params.estateId);
+    .eq("estate_id", estateId);
 
   const assetIds = (assets ?? []).map((asset) => asset.id);
 
   const { data: rules } = await supabase
     .from("estate_rules")
     .select("id")
-    .eq("estate_id", params.estateId);
+    .eq("estate_id", estateId);
 
   const { data: preferences } = assetIds.length
     ? await supabase
@@ -52,7 +56,7 @@ export default async function EstateDetailPage({
   const { data: scenarios } = await supabase
     .from("scenarios")
     .select("heir_id,name")
-    .eq("estate_id", params.estateId);
+    .eq("estate_id", estateId);
 
   const activeHeirs = (members ?? [])
     .filter((member) => member.user_id && member.role === "heir")
@@ -152,7 +156,7 @@ export default async function EstateDetailPage({
         <div className="flex flex-wrap gap-3">
           <Link
             className="rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold"
-            href={`/estates/${params.estateId}/setup`}
+            href={`/estates/${estateId}/setup`}
           >
             Setup checklist
           </Link>
@@ -182,7 +186,7 @@ export default async function EstateDetailPage({
           </div>
           <Link
             className="rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-zinc-900"
-            href={`/estates/${params.estateId}/assets`}
+            href={`/estates/${estateId}/assets`}
           >
             Add assets
           </Link>
@@ -204,7 +208,7 @@ export default async function EstateDetailPage({
             ].map((item) => (
               <Link
                 className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-semibold"
-                href={`/estates/${params.estateId}/${item.href}`}
+                href={`/estates/${estateId}/${item.href}`}
                 key={item.label}
               >
                 {item.label}

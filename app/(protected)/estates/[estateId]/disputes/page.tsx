@@ -4,17 +4,21 @@ import { getRuleAcceptanceStatus } from "@/data/estate";
 import { createClient } from "@/data/supabase/server";
 import AiResolve from "@/ui/AiResolve";
 
+export const dynamic = "force-dynamic";
+
 type DisputesPageProps = {
-  params: { estateId: string };
+  params: Promise<{ estateId: string }>;
 };
 
 export default async function DisputesPage({ params }: DisputesPageProps) {
+  const resolvedParams = await params;
+  const estateId = resolvedParams.estateId;
   const supabase = await createClient();
 
   const { data: assets } = await supabase
     .from("assets")
     .select("id,name")
-    .eq("estate_id", params.estateId);
+    .eq("estate_id", estateId);
 
   const assetIds = (assets ?? []).map((asset) => asset.id);
 
@@ -35,7 +39,7 @@ export default async function DisputesPage({ params }: DisputesPageProps) {
 
   const rulesStatus = await getRuleAcceptanceStatus(
     supabase as any,
-    params.estateId
+    estateId
   );
   const rulesReady = rulesStatus.rulesAccepted;
 
@@ -55,7 +59,7 @@ export default async function DisputesPage({ params }: DisputesPageProps) {
         </div>
         <Link
           className="rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold"
-          href={`/estates/${params.estateId}`}
+          href={`/estates/${estateId}`}
         >
           Back to estate
         </Link>

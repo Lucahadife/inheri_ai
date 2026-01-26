@@ -12,22 +12,26 @@ import {
 import AiFairness from "@/ui/AiFairness";
 import AiResolve from "@/ui/AiResolve";
 
+export const dynamic = "force-dynamic";
+
 type AllocationPageProps = {
-  params: { estateId: string };
+  params: Promise<{ estateId: string }>;
 };
 
 export default async function AllocationPage({ params }: AllocationPageProps) {
+  const resolvedParams = await params;
+  const estateId = resolvedParams.estateId;
   const supabase = await createClient();
 
   const { data: assets } = await supabase
     .from("assets")
     .select("id,name,value_low,value_high")
-    .eq("estate_id", params.estateId);
+    .eq("estate_id", estateId);
 
   const { data: members } = await supabase
     .from("estate_members")
     .select("user_id,email,status")
-    .eq("estate_id", params.estateId)
+    .eq("estate_id", estateId)
     .eq("status", "active");
 
   const assetIds = (assets ?? []).map((asset) => asset.id);
@@ -49,11 +53,11 @@ export default async function AllocationPage({ params }: AllocationPageProps) {
   const { data: rules } = await supabase
     .from("estate_rules")
     .select("title,description")
-    .eq("estate_id", params.estateId);
+    .eq("estate_id", estateId);
 
   const rulesStatus = await getRuleAcceptanceStatus(
     supabase as any,
-    params.estateId
+    estateId
   );
   const rulesReady = rulesStatus.rulesAccepted;
 
@@ -129,7 +133,7 @@ export default async function AllocationPage({ params }: AllocationPageProps) {
         </div>
         <Link
           className="rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold"
-          href={`/estates/${params.estateId}`}
+          href={`/estates/${estateId}`}
         >
           Back to estate
         </Link>

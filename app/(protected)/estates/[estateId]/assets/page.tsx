@@ -5,9 +5,11 @@ import AssetForm from "@/ui/AssetForm";
 
 import { createAsset } from "./actions";
 
+export const dynamic = "force-dynamic";
+
 type AssetsPageProps = {
-  params: { estateId: string };
-  searchParams?: { error?: string } | Promise<{ error?: string }>;
+  params: Promise<{ estateId: string }>;
+  searchParams?: Promise<{ error?: string }>;
 };
 
 type AssetDocument = {
@@ -47,7 +49,9 @@ export default async function AssetsPage({
   params,
   searchParams,
 }: AssetsPageProps) {
-  const resolvedSearchParams = await Promise.resolve(searchParams);
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
+  const estateId = resolvedParams.estateId;
   const supabase = await createClient();
 
   const { data: assets } = await supabase
@@ -55,7 +59,7 @@ export default async function AssetsPage({
     .select(
       "id,name,asset_type,asset_category,size_label,description,location,notes,value_low,value_high,ai_value_low,ai_value_high,ai_confidence,ai_factors,ai_explanation,ai_approved,asset_documents(id,storage_path,file_name,file_type,file_size,doc_role,title,doc_type,summary,ai_summary)"
     )
-    .eq("estate_id", params.estateId)
+    .eq("estate_id", estateId)
     .order("created_at", { ascending: false });
 
   const isImage = (doc: AssetDocument) => {
@@ -99,7 +103,7 @@ export default async function AssetsPage({
         </div>
         <Link
           className="rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold"
-          href={`/estates/${params.estateId}`}
+          href={`/estates/${estateId}`}
         >
           Back to estate
         </Link>
@@ -113,7 +117,7 @@ export default async function AssetsPage({
 
       <section className="grid gap-4 rounded-3xl border border-white/10 bg-white/5 p-8">
         <h2 className="text-lg font-semibold">Add an asset</h2>
-        <AssetForm estateId={params.estateId} action={createAsset} />
+        <AssetForm estateId={estateId} action={createAsset} />
       </section>
 
       <section className="grid gap-4">

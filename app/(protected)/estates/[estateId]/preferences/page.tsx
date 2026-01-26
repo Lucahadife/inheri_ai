@@ -6,16 +6,20 @@ import ScenarioBoard from "@/ui/ScenarioBoard";
 
 import { upsertBoost } from "./actions";
 
+export const dynamic = "force-dynamic";
+
 type PreferencesPageProps = {
-  params: { estateId: string };
-  searchParams?: { error?: string } | Promise<{ error?: string }>;
+  params: Promise<{ estateId: string }>;
+  searchParams?: Promise<{ error?: string }>;
 };
 
 export default async function PreferencesPage({
   params,
   searchParams,
 }: PreferencesPageProps) {
-  const resolvedSearchParams = await Promise.resolve(searchParams);
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
+  const estateId = resolvedParams.estateId;
   const supabase = await createClient();
   const {
     data: { user },
@@ -24,7 +28,7 @@ export default async function PreferencesPage({
   const { data: membership } = await supabase
     .from("estate_members")
     .select("role")
-    .eq("estate_id", params.estateId)
+    .eq("estate_id", estateId)
     .eq("user_id", user?.id ?? "")
     .single();
 
@@ -35,7 +39,7 @@ export default async function PreferencesPage({
     .select(
       "id,name,description,value_low,value_high,ai_value_low,ai_value_high,asset_documents(id,storage_path,file_name,file_type,doc_role)"
     )
-    .eq("estate_id", params.estateId)
+    .eq("estate_id", estateId)
     .order("created_at", { ascending: false });
 
   const { data: preferences } = await supabase
@@ -46,7 +50,7 @@ export default async function PreferencesPage({
   const { data: members } = await supabase
     .from("estate_members")
     .select("id,email,user_id,status,role")
-    .eq("estate_id", params.estateId)
+    .eq("estate_id", estateId)
     .eq("status", "active");
 
   const memberMap = new Map(
@@ -66,7 +70,7 @@ export default async function PreferencesPage({
   const { data: scenarios } = await supabase
     .from("scenarios")
     .select("id,name")
-    .eq("estate_id", params.estateId)
+    .eq("estate_id", estateId)
     .eq("heir_id", user?.id ?? "");
 
   const { data: scenarioItems } = scenarios?.length
@@ -126,7 +130,7 @@ export default async function PreferencesPage({
 
   const rulesStatus = await getRuleAcceptanceStatus(
     supabase as any,
-    params.estateId
+    estateId
   );
   const rulesReady = rulesStatus.rulesAccepted;
 
@@ -144,7 +148,7 @@ export default async function PreferencesPage({
         </div>
         <Link
           className="rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold"
-          href={`/estates/${params.estateId}`}
+          href={`/estates/${estateId}`}
         >
           Back to estate
         </Link>
@@ -166,7 +170,7 @@ export default async function PreferencesPage({
       <section className="grid gap-4">
         <h2 className="text-lg font-semibold">Scenarios & preferences</h2>
         <ScenarioBoard
-          estateId={params.estateId}
+          estateId={estateId}
           assets={(assets ?? []).map((asset) => ({
             ...asset,
             imageUrl: imageByAsset.get(asset.id) ?? null,
@@ -186,7 +190,7 @@ export default async function PreferencesPage({
           <h2 className="text-lg font-semibold">Decedent preference boosts</h2>
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
             <form className="grid gap-4" action={upsertBoost}>
-              <input type="hidden" name="estate_id" value={params.estateId} />
+              <input type="hidden" name="estate_id" value={estateId} />
               <label className="text-sm text-white/70">
                 Asset
                 <select

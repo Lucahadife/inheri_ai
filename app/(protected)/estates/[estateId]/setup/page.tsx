@@ -4,9 +4,11 @@ import { createClient } from "@/data/supabase/server";
 
 import { acceptRule, addMemberInSetup, addRule } from "./actions";
 
+export const dynamic = "force-dynamic";
+
 type EstateSetupPageProps = {
-  params: { estateId: string };
-  searchParams?: { error?: string } | Promise<{ error?: string }>;
+  params: Promise<{ estateId: string }>;
+  searchParams?: Promise<{ error?: string }>;
 };
 
 const ruleTemplates = [
@@ -31,25 +33,27 @@ export default async function EstateSetupPage({
   params,
   searchParams,
 }: EstateSetupPageProps) {
-  const resolvedSearchParams = await Promise.resolve(searchParams);
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
+  const estateId = resolvedParams.estateId;
   const supabase = await createClient();
 
   const { data: estate } = await supabase
     .from("estates")
     .select("id,name,description")
-    .eq("id", params.estateId)
+    .eq("id", estateId)
     .single();
 
   const { data: members } = await supabase
     .from("estate_members")
     .select("id,email,role,status,user_id")
-    .eq("estate_id", params.estateId)
+    .eq("estate_id", estateId)
     .order("created_at", { ascending: true });
 
   const { data: rules } = await supabase
     .from("estate_rules")
     .select("id,rule_type,title,description,created_by,created_at")
-    .eq("estate_id", params.estateId)
+    .eq("estate_id", estateId)
     .order("created_at", { ascending: true });
 
   const { data: acceptances } = await supabase
@@ -86,7 +90,7 @@ export default async function EstateSetupPage({
         </div>
         <Link
           className="rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold"
-          href={`/estates/${params.estateId}`}
+          href={`/estates/${estateId}`}
         >
           Go to estate hub
         </Link>
@@ -101,7 +105,7 @@ export default async function EstateSetupPage({
       <section className="grid gap-6 rounded-3xl border border-white/10 bg-white/5 p-8">
         <h2 className="text-lg font-semibold">Step 2 — Invite heirs</h2>
         <form className="grid gap-4" action={addMemberInSetup}>
-          <input type="hidden" name="estate_id" value={params.estateId} />
+          <input type="hidden" name="estate_id" value={estateId} />
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="text-sm text-white/70">
               Email
@@ -154,7 +158,7 @@ export default async function EstateSetupPage({
       <section className="grid gap-6 rounded-3xl border border-white/10 bg-white/5 p-8">
         <h2 className="text-lg font-semibold">Step 3 — Estate rules</h2>
         <form className="grid gap-4" action={addRule}>
-          <input type="hidden" name="estate_id" value={params.estateId} />
+          <input type="hidden" name="estate_id" value={estateId} />
           <label className="text-sm text-white/70">
             Rule template
             <select
@@ -214,7 +218,7 @@ export default async function EstateSetupPage({
                     <input
                       type="hidden"
                       name="estate_id"
-                      value={params.estateId}
+                      value={estateId}
                     />
                     <input type="hidden" name="rule_id" value={rule.id} />
                     <button

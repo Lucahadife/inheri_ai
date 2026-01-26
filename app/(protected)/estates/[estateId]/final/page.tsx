@@ -3,8 +3,10 @@ import Link from "next/link";
 import { getRuleAcceptanceStatus } from "@/data/estate";
 import { createClient } from "@/data/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 type FinalPageProps = {
-  params: { estateId: string };
+  params: Promise<{ estateId: string }>;
 };
 
 const checklistByType: Record<string, string[]> = {
@@ -15,16 +17,18 @@ const checklistByType: Record<string, string[]> = {
 };
 
 export default async function FinalPage({ params }: FinalPageProps) {
+  const resolvedParams = await params;
+  const estateId = resolvedParams.estateId;
   const supabase = await createClient();
 
   const { data: assets } = await supabase
     .from("assets")
     .select("id,name,asset_type,asset_category")
-    .eq("estate_id", params.estateId);
+    .eq("estate_id", estateId);
 
   const rulesStatus = await getRuleAcceptanceStatus(
     supabase as any,
-    params.estateId
+    estateId
   );
   const rulesReady = rulesStatus.rulesAccepted;
 
@@ -44,7 +48,7 @@ export default async function FinalPage({ params }: FinalPageProps) {
         </div>
         <Link
           className="rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold"
-          href={`/estates/${params.estateId}`}
+          href={`/estates/${estateId}`}
         >
           Back to estate
         </Link>
