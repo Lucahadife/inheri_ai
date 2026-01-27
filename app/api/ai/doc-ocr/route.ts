@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import OpenAI from "openai";
-import { PDFParse } from "pdf-parse";
+import { extractText } from "unpdf";
 
 import { loadPrompt } from "@/ai/prompts";
 import { docOcrSchema } from "@/ai/schemas/doc-ocr";
@@ -23,11 +23,10 @@ export async function POST(request: Request) {
     if (body.mimeType === "application/pdf") {
       try {
         const buffer = Buffer.from(body.image, "base64");
-        const parser = new PDFParse({ data: buffer });
-        const result = await parser.getText();
-        await parser.destroy();
-        return NextResponse.json({ text: result.text ?? "" });
+        const { text } = await extractText(buffer);
+        return NextResponse.json({ text: text ?? "" });
       } catch (pdfError) {
+        console.error("PDF parsing error:", pdfError);
         const message = pdfError instanceof Error ? pdfError.message : "PDF parsing failed.";
         return NextResponse.json({ error: message }, { status: 500 });
       }
