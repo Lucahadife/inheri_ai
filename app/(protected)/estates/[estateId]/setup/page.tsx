@@ -72,7 +72,7 @@ export default async function EstateSetupPage({
     acceptanceMap.get(acceptance.estate_rule_id)?.add(acceptance.user_id);
   });
 
-  const { data: currentUser } = await supabase.auth.getUser();
+  const { data: { user: currentUser } } = await supabase.auth.getUser();
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-16 text-white">
@@ -198,8 +198,8 @@ export default async function EstateSetupPage({
         <div className="grid gap-4">
           {(rules ?? []).map((rule) => {
             const acceptedBy = acceptanceMap.get(rule.id) ?? new Set();
-            const isAccepted = currentUser.data.user
-              ? acceptedBy.has(currentUser.data.user.id)
+            const isAccepted = currentUser
+              ? acceptedBy.has(currentUser.id)
               : false;
 
             return (
