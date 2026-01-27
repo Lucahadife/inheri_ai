@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { getRuleAcceptanceStatus } from "@/data/estate";
 import { createClient } from "@/data/supabase/server";
 import ScenarioBoard from "@/ui/ScenarioBoard";
 
@@ -128,12 +127,6 @@ export default async function PreferencesPage({
 
   const imageByAsset = new Map(signedUrlEntries);
 
-  const rulesStatus = await getRuleAcceptanceStatus(
-    supabase as any,
-    estateId
-  );
-  const rulesReady = rulesStatus.rulesAccepted;
-
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-16 text-white">
       <header className="flex flex-wrap items-center justify-between gap-4">
@@ -160,13 +153,6 @@ export default async function PreferencesPage({
         </div>
       ) : null}
 
-      {!rulesReady ? (
-        <div className="rounded-2xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-          Estate rules must be accepted by all active members before submitting
-          preferences.
-        </div>
-      ) : null}
-
       <section className="grid gap-4">
         <h2 className="text-lg font-semibold">Scenarios & preferences</h2>
         <ScenarioBoard
@@ -181,7 +167,6 @@ export default async function PreferencesPage({
             emotionalScore: pref.emotional_score,
             note: pref.note,
           }))}
-          disabled={!rulesReady}
         />
       </section>
 

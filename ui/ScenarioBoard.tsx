@@ -184,12 +184,6 @@ export default function ScenarioBoard({
 
   return (
     <div className="grid gap-8">
-      {disabled && (
-        <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-          Drag-and-drop is disabled until estate rules are accepted by all members.
-        </div>
-      )}
-
       <div className="grid gap-6 xl:grid-cols-[1fr_1.5fr]">
         {/* Assets Panel */}
         <section className="rounded-3xl border border-white/10 bg-white/5 p-6">
