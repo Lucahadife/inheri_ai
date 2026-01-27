@@ -8,6 +8,8 @@ export type Asset = {
   name: string;
   valueLow: number | null;
   valueHigh: number | null;
+  aiValueLow?: number | null;
+  aiValueHigh?: number | null;
 };
 
 export type Preference = {
@@ -36,11 +38,15 @@ export type TradeSuggestion = {
 };
 
 const midpoint = (asset: Asset) => {
-  if (asset.valueLow != null && asset.valueHigh != null) {
-    return (asset.valueLow + asset.valueHigh) / 2;
+  // Prefer AI values if available, fall back to manual values
+  const low = asset.aiValueLow ?? asset.valueLow;
+  const high = asset.aiValueHigh ?? asset.valueHigh;
+  
+  if (low != null && high != null) {
+    return (low + high) / 2;
   }
-  if (asset.valueHigh != null) return asset.valueHigh;
-  if (asset.valueLow != null) return asset.valueLow;
+  if (high != null) return high;
+  if (low != null) return low;
   return 0;
 };
 
