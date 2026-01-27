@@ -200,8 +200,7 @@ export default async function EstateDetailPage({
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {[
               { label: "Assets", href: "assets" },
-              { label: "Preferences", href: "preferences" },
-              { label: "Scenarios", href: "scenarios" },
+              { label: "Preferences & Scenarios", href: "preferences" },
               { label: "Allocation", href: "allocation" },
               { label: "Disputes", href: "disputes" },
               { label: "Final docs", href: "final" },
