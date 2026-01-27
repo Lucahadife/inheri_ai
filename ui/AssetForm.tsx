@@ -57,6 +57,13 @@ export default function AssetForm({
     setEstimateError(null);
     const payload = {
       name: (document.getElementById("asset-name") as HTMLInputElement)?.value,
+      asset_type: (document.getElementById("asset-type") as HTMLInputElement)
+        ?.value,
+      asset_category: (
+        document.getElementById("asset-category") as HTMLInputElement
+      )?.value,
+      size_label: (document.getElementById("asset-size") as HTMLInputElement)
+        ?.value,
       description: (
         document.getElementById("asset-description") as HTMLTextAreaElement
       )?.value,
@@ -65,6 +72,12 @@ export default function AssetForm({
       )?.value,
       notes: (document.getElementById("asset-notes") as HTMLTextAreaElement)
         ?.value,
+      value_low_manual: (
+        document.getElementById("asset-value-low") as HTMLInputElement
+      )?.value,
+      value_high_manual: (
+        document.getElementById("asset-value-high") as HTMLInputElement
+      )?.value,
       doc_text: docText,
       doc_title: (document.getElementById("asset-doc-title") as HTMLInputElement)
         ?.value,
@@ -207,6 +220,7 @@ export default function AssetForm({
         <label className="text-sm text-white/70">
           Asset type
           <input
+            id="asset-type"
             className="mt-2 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-sm text-white"
             name="asset_type"
             placeholder="Real estate, vehicle, art..."
@@ -215,6 +229,7 @@ export default function AssetForm({
         <label className="text-sm text-white/70">
           Category
           <input
+            id="asset-category"
             className="mt-2 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-sm text-white"
             name="asset_category"
             placeholder="Property, collectibles, cash"
@@ -223,6 +238,7 @@ export default function AssetForm({
         <label className="text-sm text-white/70">
           Size
           <input
+            id="asset-size"
             className="mt-2 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-sm text-white"
             name="size_label"
             placeholder="Sq ft, acreage, or dimensions"
@@ -242,21 +258,25 @@ export default function AssetForm({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <label className="text-sm text-white/70">
-          Value low
+          Value low (optional manual estimate)
           <input
+            id="asset-value-low"
             className="mt-2 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-sm text-white"
             name="value_low"
             type="number"
             min="0"
+            placeholder="Leave blank for AI estimate"
           />
         </label>
         <label className="text-sm text-white/70">
-          Value high
+          Value high (optional manual estimate)
           <input
+            id="asset-value-high"
             className="mt-2 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-2 text-sm text-white"
             name="value_high"
             type="number"
             min="0"
+            placeholder="Leave blank for AI estimate"
           />
         </label>
       </div>
@@ -400,27 +420,73 @@ export default function AssetForm({
           </div>
         ) : null}
         {estimate ? (
-          <div className="grid gap-2 text-xs text-white/70">
-            <div>
-              Range: ${estimate.low.toFixed(0)} - ${estimate.high.toFixed(0)} ·
-              Confidence {(estimate.confidence * 100).toFixed(0)}%
+          <div className="grid gap-4">
+            <div className="grid gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-emerald-100">
+                  Estimated Value Range
+                </span>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    estimate.confidence >= 0.7
+                      ? "bg-emerald-500/20 text-emerald-200"
+                      : estimate.confidence >= 0.5
+                        ? "bg-amber-500/20 text-amber-200"
+                        : "bg-rose-500/20 text-rose-200"
+                  }`}
+                >
+                  {(estimate.confidence * 100).toFixed(0)}% confidence
+                </span>
+              </div>
+              <div className="text-2xl font-bold text-white">
+                ${estimate.low.toLocaleString()} – ${estimate.high.toLocaleString()}
+              </div>
+              <div className="text-xs text-emerald-100/70">
+                Midpoint: ${((estimate.low + estimate.high) / 2).toLocaleString()}
+              </div>
             </div>
-            <div>Factors: {estimate.factors.join(", ")}</div>
-            <div>{estimate.explanation}</div>
-            <div className="text-white/50">{estimate.disclaimer}</div>
-            <label className="mt-2 flex items-center gap-2 text-xs text-white/70">
+
+            <div className="grid gap-2">
+              <p className="text-xs font-semibold text-white/80">Value Factors</p>
+              <div className="flex flex-wrap gap-2">
+                {estimate.factors.map((factor, index) => (
+                  <span
+                    key={index}
+                    className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70"
+                  >
+                    {factor}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <p className="text-xs font-semibold text-white/80">AI Explanation</p>
+              <p className="text-xs text-white/60">{estimate.explanation}</p>
+            </div>
+
+            <div className="rounded-2xl border border-amber-400/20 bg-amber-500/5 px-4 py-3">
+              <p className="text-xs text-amber-200/80">{estimate.disclaimer}</p>
+            </div>
+
+            <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
               <input
                 type="checkbox"
+                className="h-4 w-4 rounded border-white/20 bg-black/30"
                 checked={approved}
                 onChange={(event) => setApproved(event.target.checked)}
               />
-              Approve this AI estimate
+              <span className="text-sm text-white/70">
+                I approve this AI estimate for allocation calculations
+              </span>
             </label>
           </div>
         ) : (
-          <p className="text-xs text-white/50">
-            Add your asset details and document text, then run the estimate.
-          </p>
+          <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-6 text-center">
+            <p className="text-sm text-white/50">
+              Upload a document and fill in asset details, then click "Get AI estimate"
+            </p>
+          </div>
         )}
       </div>
 
