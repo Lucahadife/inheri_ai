@@ -136,20 +136,32 @@ export default function AssetForm({
       String.fromCharCode(...new Uint8Array(buffer))
     );
 
-    const response = await fetch("/api/ai/doc-ocr", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        image: base64,
-        mimeType: file.type,
-      }),
-    });
-    const data = await response.json();
+    try {
+      const response = await fetch("/api/ai/doc-ocr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image: base64,
+          mimeType: file.type,
+        }),
+      });
 
-    if (data?.error) {
-      setOcrError(data.error);
-    } else {
-      setDocText(data.text ?? "");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        setOcrError(errorData?.error ?? `OCR failed with status ${response.status}`);
+        setOcrLoading(false);
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data?.error) {
+        setOcrError(data.error);
+      } else {
+        setDocText(data.text ?? "");
+      }
+    } catch (error) {
+      setOcrError(error instanceof Error ? error.message : "OCR request failed.");
     }
 
     setOcrLoading(false);
