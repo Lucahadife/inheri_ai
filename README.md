@@ -2,9 +2,9 @@
 
 FairSplit AI is a collaborative inheritance planning tool that helps families fairly divide assets by combining market value estimates and emotional preferences. The system is rule-based and explainable, with optional AI assistance for valuation context, document summaries, and conflict resolution.
 
-## Product goals (v1)
-- Create estates and manage members (executor/admin + heirs).
-- Add assets with documents stored in Supabase Storage.
+## Product goals
+- Create estates and manage members 
+- Add assets with documents stored
 - Collect heir preferences and decedent preference boosts.
 - Build scenarios (carts) with totals and comparisons.
 - Generate explainable allocations with fairness metrics.
